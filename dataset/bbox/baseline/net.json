@@ -1,0 +1,37 @@
+{
+    "train": {
+        "batch_size": 100000,
+        "max_epochs": 100,
+        "lr": 0.001,
+        "step_size": 30,
+        "gamma": 0.5,
+        "shuffle_step": 4,
+        "test_step": 5
+    },
+    "network_config": {
+        "otype": "CutlassMLP",
+        "activation": "ReLU",
+        "output_activation": "None",
+        "n_neurons": 256,
+        "n_hidden_layers": 4
+    },
+    "encoding_config": {
+        "otype": "Composite",
+        "n_dims": 6,
+        "nested": [
+            {
+                "otype": "HashGrid",
+                "n_dims_to_encode": 3,
+                "n_levels": 4,
+                "n_features_per_level": 2,
+                "base_resolution": 4,
+                "per_level_scale": 2.0
+            },
+            {
+                "otype": "Frequency",
+                "n_dims": 3,
+                "n_frequencies": 3
+            }
+        ]
+    }
+}

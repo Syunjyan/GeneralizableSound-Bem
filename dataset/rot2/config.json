@@ -1,0 +1,48 @@
+{
+    "vibration_obj": [
+        {
+            "mesh": "sphere.obj",
+            "size": 0.03,
+            "position": [
+                -0.05,
+                0,
+                0
+            ]
+        }
+    ],
+    "static_obj": [
+        {
+            "mesh": "static.obj",
+            "size": 0.2,
+            "position": [
+                0,
+                0,
+                0
+            ]
+        }
+    ],
+    "rot_obj": [
+        {
+            "mesh": "rot.obj",
+            "size": 0.2,
+            "position": [
+                -0.15,
+                0,
+                0
+            ]
+        }
+    ],
+    "solver": {
+        "src_sample_num": 10000,
+        "trg_sample_num": 1000,
+        "freq_min": 100,
+        "freq_max": 10000,
+        "rot_axis": "z",
+        "rot_max_degree": -90,
+        "rot_pos": [
+            -0.1,
+            0.1,
+            0
+        ]
+    }
+}

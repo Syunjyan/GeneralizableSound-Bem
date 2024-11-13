@@ -1,0 +1,40 @@
+{
+    "train": {
+        "batch_size": 10000,
+        "max_epochs": 30,
+        "lr": 0.001,
+        "step_size": 10,
+        "gamma": 0.5,
+        "shuffle_step": 4,
+        "test_step": 5
+    },
+    "dense_map": {
+        "feats_dim": 4,
+        "map_num": 16,
+        "resolution": 32
+    },
+    "pos_net": {
+        "otype": "CutlassMLP",
+        "activation": "ReLU",
+        "output_activation": "None",
+        "n_neurons": 64,
+        "n_hidden_layers": 4
+    },
+    "map_net": {
+        "otype": "CutlassMLP",
+        "activation": "ReLU",
+        "output_activation": "None",
+        "n_neurons": 64,
+        "n_hidden_layers": 4
+    },
+    "freq_encoding": {
+        "otype": "Frequency",
+        "n_dims": 1,
+        "n_frequencies": 12
+    },
+    "condition_encoding": {
+        "otype": "Frequency",
+        "n_dims": 3,
+        "n_frequencies": 12
+    }
+}

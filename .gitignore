@@ -3,7 +3,7 @@
 .vscode
 output
 .exafmm
-dataset
+# dataset
 *.pt
 *.png
 *.mp4

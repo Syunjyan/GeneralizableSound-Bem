@@ -1,0 +1,67 @@
+{
+    "obj": [
+        {
+            "mesh": "container.obj",
+            "size": 0.15,
+            "position": [
+                0,
+                0,
+                0.075
+            ]
+        },
+        {
+            "mesh": "plane.obj",
+            "size": 0.11,
+            "position": [
+                0,
+                0,
+                0.15
+            ],
+            "rot_axis": "y",
+            "rot_pos": [
+                0.055,
+                0,
+                0
+            ],
+            "rot_max_deg": 180
+        },
+        {
+            "mesh": "source.obj",
+            "size": 0.03,
+            "vibration": "-z",
+            "position": [
+                0,
+                0,
+                0.05
+            ],
+            "rot_axis": "y",
+            "rot_pos": [
+                0,
+                0,
+                0
+            ],
+            "rot_max_deg": 360,
+            "move": [
+                0,
+                0,
+                0.2
+            ]
+        }
+    ],
+    "solver": {
+        "src_sample_num": 100,
+        "trg_sample_num": 10000,
+        "freq_min": 100,
+        "freq_max": 10000,
+        "trg_pos_min": [
+            -0.2,
+            -0.2,
+            0
+        ],
+        "trg_pos_max": [
+            0.2,
+            0.2,
+            0.4
+        ]
+    }
+}

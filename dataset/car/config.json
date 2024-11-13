@@ -1,0 +1,48 @@
+{
+    "obj": [
+        {
+            "mesh": "car.obj",
+            "size": 0.013,
+            "vibration": "z",
+            "trajectory": "curve.obj",
+            "trajectory_size": 0.2,
+            "offset": [
+                0.0,
+                0.0,
+                0.004
+            ]
+        },
+        {
+            "mesh": "car.obj",
+            "size": 0.013,
+            "vibration": "z",
+            "trajectory": "curve.obj",
+            "trajectory_size": 0.2,
+            "offset": [
+                0.0,
+                0.0,
+                0.004
+            ]
+        },
+        {
+            "mesh_dir": "tracks",
+            "size": 0.227
+        }
+    ],
+    "solver": {
+        "src_sample_num": 5000,
+        "trg_sample_num": 10000,
+        "freq_min": 100,
+        "freq_max": 10000,
+        "trg_pos_min": [
+            -0.1,
+            -0.1,
+            -0.1
+        ],
+        "trg_pos_max": [
+            0.1,
+            0.1,
+            0.1
+        ]
+    }
+}
