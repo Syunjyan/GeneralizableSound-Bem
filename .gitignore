@@ -1,0 +1,15 @@
+**/build
+**/__pycache__
+.vscode
+output
+.exafmm
+dataset
+*.pt
+*.png
+*.mp4
+test.blend
+build
+.cache
+bempp-cl
+NeuralSound
+tiny-cuda-nn
