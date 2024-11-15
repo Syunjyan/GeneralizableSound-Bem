@@ -220,7 +220,8 @@ class Scene:
 
     def sample(self, max_resize=2, log=False):
         '''
-        Sample the scene: Randomly resize, rotate and move the objects.
+        Sample the scene: Randomly resize, rotate and move the objects for once and
+        randomly select a frequency.
 
         For each object transition, a random factor is sampled from a uniform distribution.
         '''
@@ -277,6 +278,11 @@ class Scene:
         self.k = (2 * np.pi * freq / 343.2).item()
 
     def solve(self):
+        '''
+        Solve the scene: Calculate the potential of the current (sampled) scene at the target points.
+        Ramdomly sample target points in the bounding box using spherical coordinates.
+        self.potential: a tensor of shape (trg_sample_num, 1), which is the amount of the sampled frequency of sound at each target point.
+        '''
         solver = BEM_Solver(self.vertices, self.triangles)
         self.dirichlet = solver.neumann2dirichlet(self.k, self.neumann)
 
@@ -411,3 +417,143 @@ class EditableModalSound:
         vis.add_mesh(self.vertices, self.triangles, self.neumann_vtx[mode_idx].abs())
         vis.add_points(self.trg_points, self.potentials[mode_idx].abs())
         vis.show()
+
+def initial_config(data_dir, src_sample_num : int = 1, trg_sample_num: int = 1000,
+                    freq_min: int = 100, freq_max: int = 10000, 
+                    trg_pos_min: list = [-.5,-.5,-.5], trg_pos_max: list = [.5,.5,.5]):
+    '''
+    Initialize the necessary scene dataset file -- config.json:
+
+    - data_dir: str, the directory of the scene data, i.e. "dataset/scene_name"
+    - src_sample_num: int, default number of source samples, i.e. number of times the scene is sampled
+    - trg_sample_num: int, default number of target samples, randomly sampled in bounding box space
+    - freq_min, freq_max: int, minimum and maximum frequency of the sound
+    - trg_pos_min, trg_pos_max: list, minimum and maximum target position of the sound, i.e. the bounding box of the scene
+      - in the shape of [x_min, y_min, z_min] and [x_max, y_max, z_max]
+
+    '''
+    config = {
+        "obj": [],
+        "solver": {
+            "src_sample_num": 10,
+            "trg_sample_num": 1000,
+            "freq_min": 100,
+            "freq_max": 1000,
+            "trg_pos_min": [-1, -1, -1],
+            "trg_pos_max": [1, 1, 1],
+        },
+    } # a sample config.json
+
+    with open(f"{data_dir}/config.json", "w") as file:
+        json.dump(config, file)
+
+    return data_dir
+
+
+def config_add_obj(data_dir, obj_name, size, resize = None, rot_axis=None, rot_pos=None, rot_max_deg:float=None, move=None, position=None, vibration=None):
+    '''
+    Add an object to the scene config.json.
+
+    Required arguments:
+        - data_dir: str, the directory of the scene data
+        - obj_name: str, the name of the mesh object file, i.e. "obj.obj"
+        - size: float, the size of the object. Our Scene class will normalize the object to this size.
+
+    Optional arguments: when not specified, the object will not be resized, rotated, moved or vibrated.
+        - resize: list, the resize factor of the object, i.e. [0,0,1], which means no resize in x and y, and resize in z by 1x`max_resize` scale.
+        - rot_axis: list, the rotation axis of the object, i.e. [1,0,0] for x-axis
+        - rot_pos: list, the rotation axis position of the object, i.e. [0,0,0] for the origin
+        - rot_max_deg: float, the maximum rotation degree of the object
+        - move: list, the move vector of the object, i.e. [0,0,0] for no move
+        - position: list, the position of the object center
+        - vibration: str, the vibration direction of the object, i.e. "-x" for vibrating in the negative x direction
+
+
+    Notice: The mesh should be in .obj format and placed in the data_dir.
+
+    '''
+    with open(f"{data_dir}/config.json", "r") as file:
+        config = json.load(file)
+    
+    obj = {
+        "mesh": obj_name,
+        "size": size,
+    }
+
+    if resize is not None:
+        obj["resize"] = resize
+
+    if rot_axis is not None and rot_pos is not None and rot_max_deg is not None:
+        obj["rot_axis"] = rot_axis
+        obj["rot_pos"] = rot_pos
+        obj["rot_max_deg"] = rot_max_deg
+    
+    if move is not None:
+        obj["move"] = move
+    
+    if position is not None:
+        obj["position"] = position
+    else :
+        obj["position"] = [0,0,0]
+
+    if vibration is not None:
+        obj["vibration"] = vibration
+    
+    config["obj"].append(obj)
+
+    with open(f"{data_dir}/config.json", "w") as file:
+        json.dump(config, file)
+    
+
+def initial_files(data_dir):
+    ''' 
+    TODO
+    '''
+    
+    with open(f"{data_dir}/config.json", "w") as file:
+        json.dump(config, file)
+
+    with open(f"{data_dir}/animation_generator.py", "w") as file:
+        file.write("# please generate your animation")
+
+    np.savez(f"{data_dir}/animation_data.npz", data={'x' : np.zeros(0), 'fps' : 30})
+
+
+
+def genarate_sample_scene(data_dir, data_name, scene: Scene, src_sample_num = None, trg_sample_num = None , show_scene:bool=False):
+    '''
+    Generate the scene data and save it to the data_dir/data/data_name.pt
+    '''
+    scene = Scene(f"{data_dir}/config.json")
+
+    if src_sample_num is None:
+        src_sample_num = scene.src_sample_num
+    if trg_sample_num is None:
+        trg_sample_num = scene.trg_sample_num
+
+    x = torch.zeros(
+        src_sample_num,
+        trg_sample_num,
+        3 + scene.rot_num + scene.move_num + (1 if scene.resize else 0) + 1,
+        dtype=torch.float32,
+    )
+    y = torch.zeros(src_sample_num, trg_sample_num, 1, dtype=torch.float32)
+
+    for src_idx in tqdm(range(src_sample_num)):
+        scene.sample()
+        scene.solve()
+        x[src_idx, :, :3] = scene.trg_factor
+        x[src_idx, :, 3 : 3 + scene.rot_num] = scene.rot_factors
+        x[src_idx, :, 3 + scene.rot_num : 3 + scene.rot_num + scene.move_num] = (
+            scene.move_factors
+        )
+        x[src_idx, :, -2] = scene.resize_factor
+        x[src_idx, :, -1] = scene.freq_factor
+        y[src_idx] = scene.potential.abs().unsqueeze(-1)
+
+        if src_idx == 0 and show_scene:
+            scene.show()
+
+
+    torch.save({"x": x, "y": y}, f"{data_dir}/data/{data_name}.pt")
+    return x, y

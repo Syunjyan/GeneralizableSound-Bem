@@ -6,7 +6,7 @@ from src.scene import Scene
 import torch
 from tqdm import tqdm
 
-data_dir = "dataset/NeuPAT_new/combine_new"
+data_dir = "dataset/combine_new"
 
 
 scene = Scene(f"{data_dir}/config.json")
