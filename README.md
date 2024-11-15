@@ -65,6 +65,9 @@ To use the code, follow these steps:
 ```
 dataset
 ├── scene_1_name
+|   ├── data
+│   │   ├── x.pt # bem calculated data
+│   │   ├── ...
 │   ├── config.json # configuration file for the scene
 │   ├── animation_data.npz # used for network to generate animation sound
 │   ├── object_1.obj # mesh file used in the scene
@@ -120,7 +123,7 @@ Furthermore, we provide some other **helper functions** to help prepare the conf
 > The `dataset/scene` directory is not certain, you can create your own directory to store the scene data.
 
 
-`config.json` (necessary)
+#### `config.json` (necessary)
 
 config.json is a configuration file for the MC-Bem. It contains the following fields:
 
@@ -142,7 +145,7 @@ config.json is a configuration file for the MC-Bem. It contains the following fi
     - `trg_pos_min`: list of 3 floats, the minimum target position
     - `trg_pos_max`: list of 3 floats, the maximum target position
 
-`animation_data.npz`
+#### `animation_data.npz`
 
 Used for network to generate animation sound. (Ignores for now)
 
