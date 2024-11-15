@@ -90,28 +90,28 @@ solve.
 
 The `Scene` class contains the following methods:
 
-`Scene.__init__(self, json_path)`
+#### `Scene.__init__(self, json_path)`
 
 - This method initializes the `Scene` object with the configuration file specified by `json_path`.
 
-`Scene.sample(self, max_resize=2, log=False)`
+#### `Scene.sample(self, max_resize=2, log=False)`
 
 -  This method samples the scene according to the configuration file. The `max_resize` parameter specifies the maximum resize factor for the scene, and the `log` parameter specifies whether to log the sampling process.
 
 
 Furthermore, we provide some other **helper functions** to help prepare the config and generate the sound data.
 
-`initial_config(data_dir, src_sample_num, trg_sample_num, freq_min, freq_max, trg_pos_min, trg_pos_max)`
+#### `initial_config(data_dir, src_sample_num, trg_sample_num, freq_min, freq_max, trg_pos_min, trg_pos_max)`
 
 - This function generates the initial configuration file for the scene, defining the source and target positions, the frequency range, and the default number of samples for the source and target positions.
 
 - The complete structure of the json file will be described below.
 
-`config_add_obj(data_dir, obj_name, size, resize = None, rot_axis=None, rot_pos=None, rot_max_deg:float=None, move=None, position=None, vibration=None)`
+#### `config_add_obj(data_dir, obj_name, size, resize = None, rot_axis=None, rot_pos=None, rot_max_deg:float=None, move=None, position=None, vibration=None)`
 
 - This function adds an object to the configuration file, specifying the object name, size, position,  whether and how to resize, rotate, move, or vibrate the object.
 
-`genarate_sample_scene(data_dir, data_name, scene: Scene, src_sample_num = None, trg_sample_num = None , show_scene=False)`
+#### `genarate_sample_scene(data_dir, data_name, scene: Scene, src_sample_num = None, trg_sample_num = None , show_scene=False)`
 
 - This function generates the `x-y` data according to the configuration file, and saves the data`*.pt` to the specified directory.
 
