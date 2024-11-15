@@ -111,7 +111,7 @@ Furthermore, we provide some other **helper functions** to help prepare the conf
 
 - This function adds an object to the configuration file, specifying the object name, size, position,  whether and how to resize, rotate, move, or vibrate the object.
 
-#### `genarate_sample_scene(data_dir, data_name, scene: Scene, src_sample_num = None, trg_sample_num = None , show_scene=False)`
+#### `genarate_sample_scene(data_dir, data_name, src_sample_num = None, trg_sample_num = None , show_scene=False)`
 
 - This function generates the `x-y` data according to the configuration file, and saves the data`*.pt` to the specified directory.
 

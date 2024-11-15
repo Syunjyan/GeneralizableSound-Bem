@@ -2,6 +2,19 @@ import sys
 
 sys.path.append("./")
 
+from src.scene import Scene,genarate_sample_scene
+import torch
+from tqdm import tqdm
+
+data_dir = "dataset/fix"
+genarate_sample_scene(data_dir, sys.argv[1], show_scene=True)
+
+
+'''
+import sys
+
+sys.path.append("./")
+
 from src.scene import Scene
 import torch
 from tqdm import tqdm
@@ -32,3 +45,5 @@ for src_idx in tqdm(range(scene.src_sample_num)):
 
 
 torch.save({"x": x, "y": y}, f"{data_dir}/data/{sys.argv[1]}.pt")
+
+'''

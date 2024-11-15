@@ -520,7 +520,7 @@ def initial_files(data_dir):
 
 
 
-def genarate_sample_scene(data_dir, data_name, scene: Scene, src_sample_num = None, trg_sample_num = None , show_scene:bool=False):
+def genarate_sample_scene(data_dir, data_name, src_sample_num = None, trg_sample_num = None , show_scene:bool=False):
     '''
     Generate the scene data and save it to the data_dir/data/data_name.pt
     '''
