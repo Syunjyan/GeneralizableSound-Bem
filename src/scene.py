@@ -543,11 +543,14 @@ def genarate_sample_scene(data_dir, data_name, scene: Scene, src_sample_num = No
         scene.sample()
         scene.solve()
         x[src_idx, :, :3] = scene.trg_factor
-        x[src_idx, :, 3 : 3 + scene.rot_num] = scene.rot_factors
-        x[src_idx, :, 3 + scene.rot_num : 3 + scene.rot_num + scene.move_num] = (
-            scene.move_factors
-        )
-        x[src_idx, :, -2] = scene.resize_factor
+        if scene.rot_num > 0:
+            x[src_idx, :, 3 : 3 + scene.rot_num] = scene.rot_factors
+        if scene.move_num > 0:
+            x[src_idx, :, 3 + scene.rot_num : 3 + scene.rot_num + scene.move_num] = (
+                scene.move_factors
+            )
+        if scene.resize:
+            x[src_idx, :, -2] = scene.resize_factor
         x[src_idx, :, -1] = scene.freq_factor
         y[src_idx] = scene.potential.abs().unsqueeze(-1)
 
