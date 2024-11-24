@@ -277,11 +277,63 @@ class Scene:
         freq = 10**freq_log
         self.k = (2 * np.pi * freq / 343.2).item()
 
+    def setting(self, rot_factors, move_factors, obj_list_factors, resize_factor, freq_factor):
+        '''
+        Manually set the scene parameters. 
+        Instead of randomly sampling, the scene is set by the given factors.
+        '''
+        rot_idx = 0
+        move_idx = 0
+        obj_list_idx = 0
+        for obj in self.objs:
+            if isinstance(obj, ObjList):
+                obj.sample(obj_list_factors[obj_list_idx].item())
+                obj_list_idx += 1
+            if isinstance(obj, ObjAnim):
+                obj.sample(obj_list_factors[obj_list_idx].item())
+                obj_list_idx += 1
+            obj.resize(resize_factor.item())
+            if self.rot_num > 0:
+                obj.rotation(rot_factors[rot_idx].item())
+                if obj.rot_axis is not None and rot_idx < self.rot_num - 1:
+                    rot_idx += 1
+            if self.move_num > 0:
+                obj.move(move_factors[move_idx].item())
+                if obj.move_vec is not None and move_idx < self.move_num - 1:
+                    move_idx += 1
+            obj.shift()
+
+        self.vertices = torch.zeros(0, 3).cuda().to(torch.float32)
+        self.triangles = torch.zeros(0, 3).cuda().to(torch.int32)
+        self.neumann = torch.zeros(0).cuda().to(torch.complex64)
+        for obj in self.objs:
+            self.triangles = torch.cat(
+                [self.triangles, obj.triangles + len(self.vertices)]
+            )
+            self.vertices = torch.cat([self.vertices, obj.vertices])
+            self.neumann = torch.cat([self.neumann, obj.neumann])
+        self.vertices = self.vertices.contiguous().float()
+        self.triangles = self.triangles.contiguous().int()
+        self.rot_factors = rot_factors
+        self.move_factors = move_factors
+        self.obj_list_factors = obj_list_factors
+        self.resize_factor = resize_factor
+        self.freq_factor = freq_factor
+        freq_log = (
+            self.freq_factor * (self.freq_max_log - self.freq_min_log)
+            + self.freq_min_log
+        )
+        freq = 10**freq_log
+        self.k = (2 * np.pi * freq / 343.2).item()
+
+
     def solve(self):
         '''
         Solve the scene: Calculate the potential of the current (sampled) scene at the target points.
         Ramdomly sample target points in the bounding box using spherical coordinates.
-        self.potential: a tensor of shape (trg_sample_num, 1), which is the amount of the sampled frequency of sound at each target point.
+        
+        Returns:
+        `self.potential`: a tensor of shape (trg_sample_num, 1), which is the amount of the sampled frequency of sound at each target point.
         '''
         solver = BEM_Solver(self.vertices, self.triangles)
         self.dirichlet = solver.neumann2dirichlet(self.k, self.neumann)

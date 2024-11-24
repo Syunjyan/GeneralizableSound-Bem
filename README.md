@@ -14,16 +14,6 @@ cd tiny-cuda-nn/bindings/torch
 python setup.py install
 ```
 
-- Bempp:
-
-```bash
-pip install plotly pandas pyopencl[pocl] gmsh
-# for windows, install pyopencl from https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl
-git clone https://github.com/bempp/bempp-cl
-cd bempp-cl
-python setup.py install
-```
-
 Other dependencies:
 
 ```bash
