@@ -179,6 +179,8 @@ def apply_spec_mask_to_audio(
     animation_frame_rate=30,
     trg_sample_rate=16000,
     n_fft=256,
+    save_spec=False,
+    save_path='dataset/spectrogram'
 ):
     from scipy.io import wavfile
     import librosa
@@ -208,7 +210,7 @@ def apply_spec_mask_to_audio(
             plt.axis("off")
 
         ax = plt.subplot(3, 1, idx)
-        plot_spec(ax, torch.abs(spec), title="")
+        plot_spec(ax, torch.abs(spec), title)
 
     plot(spec_audio, 1, "original")
 
@@ -223,9 +225,12 @@ def apply_spec_mask_to_audio(
     interped_nc_spec = interp_function(new_points).reshape(*spec_audio.shape)
     spec_audio = spec_audio * interped_nc_spec
     spec_audio = torch.from_numpy(spec_audio)
+    # print("interped_nc_spec:", interped_nc_spec)
     plot(torch.from_numpy(interped_nc_spec), 2, "mask")
     plot(spec_audio, 3, "masked")
-    plt.show()
+    if save_spec:
+        plt.savefig(f"{save_path}/{audio_id}_spectrogram.png")
+    # plt.show()
 
     audio = torchaudio.transforms.InverseSpectrogram(n_fft=n_fft)(
         spec_audio.unsqueeze(0)

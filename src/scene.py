@@ -48,6 +48,9 @@ class ObjList:
         self.vertices = self.vertices_list[idx]
         self.neumann = self.neumann_list[idx]
 
+    def reset(self):
+        pass
+
     def resize(self, factor):
         pass
 
@@ -98,6 +101,9 @@ class ObjAnim:
         self.vertices = rotation.apply(self.vertices_base)
         self.vertices = self.vertices - get_mesh_center(self.vertices) + center
         self.vertices = torch.tensor(self.vertices).cuda().to(torch.float32)
+
+    def reset(self):
+        pass
 
     def resize(self, factor):
         pass
@@ -153,8 +159,10 @@ class Obj:
             else:
                 self.neumann[self.vertices_base[:, idx] > 0] = 1
 
-    def resize(self, factor):
+    def reset(self):
         self.vertices = self.vertices_base.clone()
+
+    def resize(self, factor):
         self.resize_vec = self.resize_base * factor
         self.resize_vec[self.resize_vec == 0] = 1
         self.vertices *= self.resize_vec
@@ -202,7 +210,7 @@ class Scene:
                     self.rot_num += 1
                 if obj.move_vec is not None:
                     self.move_num += 1
-                if obj.resize_base is not None:
+                if torch.any(obj.resize_base != 0):
                     self.resize = True
             self.objs.append(obj)
         solver_json = data["solver"]
@@ -240,6 +248,7 @@ class Scene:
             if isinstance(obj, ObjAnim):
                 obj.sample(obj_list_factors[obj_list_idx].item())
                 obj_list_idx += 1
+            obj.reset()
             obj.resize(resize_factor.item() * (max_resize - 1) + 1)
             if self.rot_num > 0:
                 obj.rotation(rot_factors[rot_idx].item())
@@ -277,11 +286,37 @@ class Scene:
         freq = 10**freq_log
         self.k = (2 * np.pi * freq / 343.2).item()
 
-    def setting(self, rot_factors, move_factors, obj_list_factors, resize_factor, freq_factor):
+    def setting(self, rot_factors:torch.Tensor=None, move_factors:torch.Tensor=None, 
+                obj_list_factors:torch.Tensor=None, resize_factor:torch.Tensor=None, 
+                freq_factor:torch.Tensor=None):
         '''
-        Manually set the scene parameters. 
-        Instead of randomly sampling, the scene is set by the given factors.
+        Manually set the scene parameters. Instead of randomly sampling, the scene is set by the given factors.
+
+        We suggest to define the frequency manually, as the frequency is the main parameter of the scene. Otherwise, the frequency will be randomly sampled.
         '''
+
+        if rot_factors:
+            assert self.rot_num == len(rot_factors), "rot_factors length error"
+        if move_factors:    
+            assert self.move_num == len(move_factors), "move_factors length error"
+        if obj_list_factors:
+            assert self.obj_list_num == len(obj_list_factors), "obj_list_factors length error"
+        if resize_factor:
+            assert self.resize, "resize_factor error"
+        
+        if freq_factor.item() == 0:
+            self.freq_factor = torch.rand(1).cuda()
+        else :
+            self.freq_factor = freq_factor
+
+        freq_log = (
+            self.freq_factor * (self.freq_max_log - self.freq_min_log)
+            + self.freq_min_log
+        )
+        freq = 10**freq_log
+
+        self.k = (2 * np.pi * freq / 343.2).item()
+
         rot_idx = 0
         move_idx = 0
         obj_list_idx = 0
@@ -292,7 +327,9 @@ class Scene:
             if isinstance(obj, ObjAnim):
                 obj.sample(obj_list_factors[obj_list_idx].item())
                 obj_list_idx += 1
-            obj.resize(resize_factor.item())
+            obj.reset()
+            if resize_factor:
+                obj.resize(resize_factor.item())
             if self.rot_num > 0:
                 obj.rotation(rot_factors[rot_idx].item())
                 if obj.rot_axis is not None and rot_idx < self.rot_num - 1:
@@ -314,46 +351,47 @@ class Scene:
             self.neumann = torch.cat([self.neumann, obj.neumann])
         self.vertices = self.vertices.contiguous().float()
         self.triangles = self.triangles.contiguous().int()
+
         self.rot_factors = rot_factors
         self.move_factors = move_factors
         self.obj_list_factors = obj_list_factors
         self.resize_factor = resize_factor
-        self.freq_factor = freq_factor
-        freq_log = (
-            self.freq_factor * (self.freq_max_log - self.freq_min_log)
-            + self.freq_min_log
-        )
-        freq = 10**freq_log
-        self.k = (2 * np.pi * freq / 343.2).item()
 
 
-    def solve(self):
+    def solve(self, man_trg_factor=None):
         '''
         Solve the scene: Calculate the potential of the current (sampled) scene at the target points.
-        Ramdomly sample target points in the bounding box using spherical coordinates.
+        
+        If `man_trg_point` is `None`, then the function will 
+        ramdomly sample target points in the bounding box using spherical coordinates for `self.trg_sample_num` times.
         
         Returns:
-        `self.potential`: a tensor of shape (trg_sample_num, 1), which is the amount of the sampled frequency of sound at each target point.
+        `self.potential`: a tensor of shape `(len(self.trg_points), 1)`, which is the potential of the scene at the target points.
         '''
         solver = BEM_Solver(self.vertices, self.triangles)
         self.dirichlet = solver.neumann2dirichlet(self.k, self.neumann)
 
-        sample_points_base = torch.rand(
-            self.trg_sample_num, 3, device="cuda", dtype=torch.float32
-        )
+        if man_trg_factor is None:
+            sample_points_base = torch.rand(
+                self.trg_sample_num, 3, device="cuda", dtype=torch.float32
+            )
+            self.trg_factor = sample_points_base
+        else :
+            self.trg_factor = man_trg_factor
+            # self.trg_sample_num = man_trg_factor.shape[0]
+        
         # rs = (sample_points_base[:, 0] + 1) * self.bbox_size
-        rs = (sample_points_base[:, 0]) * self.bbox_size * 2
-        theta = sample_points_base[:, 1] * 2 * np.pi - np.pi
-        phi = sample_points_base[:, 2] * np.pi
-        xs = rs * torch.sin(phi) * torch.cos(theta)
-        ys = rs * torch.sin(phi) * torch.sin(theta)
-        zs = rs * torch.cos(phi)
+        rs = (self.trg_factor[:, 0]) * self.bbox_size * 2 # (0,2) times the bounding box size
+        theta = self.trg_factor[:, 1] * np.pi # (0, pi)
+        phi = self.trg_factor[:, 2] * 2 * np.pi - np.pi # (-pi, pi)
+        xs = rs * torch.sin(theta) * torch.cos(phi)
+        ys = rs * torch.sin(theta) * torch.sin(phi)
+        zs = rs * torch.cos(theta)
         self.xs = xs
         self.ys = ys
         self.zs = zs
         self.trg_points = torch.stack([xs, ys, zs], dim=-1) + self.bbox_center
 
-        self.trg_factor = sample_points_base
         self.potential = solver.boundary2potential(
             self.k, self.neumann, self.dirichlet, self.trg_points
         ).cpu()
@@ -561,7 +599,7 @@ def initial_files(data_dir):
     ''' 
     TODO
     '''
-    
+    pass
     with open(f"{data_dir}/config.json", "w") as file:
         json.dump(config, file)
 
@@ -609,6 +647,6 @@ def genarate_sample_scene(data_dir, data_name, src_sample_num = None, trg_sample
         if src_idx == 0 and show_scene:
             scene.show()
 
-
+    os.makedirs(f"{data_dir}/data", exist_ok=True)
     torch.save({"x": x, "y": y}, f"{data_dir}/data/{data_name}.pt")
     return x, y

@@ -18,7 +18,7 @@ Other dependencies:
 
 ```bash
 pip install numpy scipy numba meshio matplotlib tqdm commentjson protobuf ipywidgets IPython
-pip install plotly scikit-image ninja librosa
+pip install plotly scikit-image ninja librosa seaborn
 ```
 
 
@@ -135,8 +135,37 @@ config.json is a configuration file for the MC-Bem. It contains the following fi
     - `trg_pos_min`: list of 3 floats, the minimum target position
     - `trg_pos_max`: list of 3 floats, the maximum target position
 
-#### `animation_data.npz`
+## How to Generate the Sound
 
-Used for network to generate animation sound. (Ignores for now)
+If the scene is set up, you can generate a listenable sound given the listener position. We provide a script `scripts/generate_sound.py` to generate the sound data for training. 
 
-TODO
+The dataset structure is as follows:
+
+```
+dataset
+├── scene_1_name
+|   ├── animation_data.npz # info of position and fps
+|   ├── config.json 
+|   ├── your_mesh.obj
+|   ├── ...
+```
+
+The `animation_data.npz` file contains the following fields:
+```python
+{
+    'fps': 30, # frame per second
+    'position': np.array([[r1, t1, p1], [r2, t2, p2], ...]) # the sphere vector of the scene, where r, t, p are the radius, theta, phi of the sphere vector in [0, 1]
+}
+```
+
+### `scripts/generate_sound.py`
+
+An example of how to generate the sound of Scene "fix" is as follows:
+
+```bash
+python scripts/generate_sound.py -d dataset/fix -n 128 -f True
+```
+
+
+If `--figure` is `True`, the figure will save to the `dataset/spectrogram` directory.
+
