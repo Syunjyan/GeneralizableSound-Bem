@@ -40,7 +40,7 @@ To use the code, follow these steps:
 3. generate the sound data for training
 
     ```bash
-    python experiment/neuPAT_fix/generate.py
+    python experiments/neuPAT_fix/generate.py
     ```
 
 

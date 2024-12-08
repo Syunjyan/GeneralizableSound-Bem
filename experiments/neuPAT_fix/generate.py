@@ -2,12 +2,12 @@ import sys
 
 sys.path.append("./")
 
-from src.scene import Scene,genarate_sample_scene
+from src.scene import Scene,genarate_sample_scene, generate_sample_scene_simpler
 import torch
 from tqdm import tqdm
 
 data_dir = "dataset/fix"
-genarate_sample_scene(data_dir, sys.argv[1], show_scene=True)
+generate_sample_scene_simpler(data_dir, sys.argv[1], show_scene=True)
 
 
 '''

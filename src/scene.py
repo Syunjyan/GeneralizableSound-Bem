@@ -185,6 +185,29 @@ class Obj:
     def shift(self):
         if self.position is not None:
             self.vertices += self.position
+            
+    def move_the_object(self, move_vector: torch.Tensor,
+                        rotate_vector: torch.Tensor, 
+                        scale_vector: torch.Tensor,
+                        ):
+        """
+        重写的一个较简单的move函数，直接移动/旋转物体到指定位置。
+        具体来说，我们首先缩放物体，然后以 (0,0,0) 为中心旋转物体，然后移动物体到指定位置。
+        :param move_vector: torch.Tensor, 移动向量, [x, y, z]
+        :param rotate_vector: torch.Tensor, 旋转向量, [x, y, z]
+        :param scale_vector: torch.Tensor, 缩放向量, scalar
+        """
+        # 缩放
+        self.vertices = self.vertices_base.clone()
+        self.vertices *= scale_vector
+        # 旋转
+        vert_numpy = self.vertices.cpu().numpy()
+        rotate_vector_numpy = rotate_vector.cpu().numpy()
+        self.vertices = R.from_rotvec(rotate_vector_numpy).apply(vert_numpy - get_mesh_center(vert_numpy)) + get_mesh_center(vert_numpy)
+        self.vertices = torch.tensor(self.vertices).cuda().to(torch.float32)
+        # 移动
+        self.vertices += move_vector
+
 
 
 class Scene:
@@ -226,6 +249,58 @@ class Scene:
         self.bbox_center = (self.trg_pos_max + self.trg_pos_min) / 2
         self.trg_points = None
 
+
+    def my_sample(self, max_resize=2, log=False,
+                  sound_source: str="phone.obj"
+                  ):
+        """
+        一个较为简单的取样，在场景内随机放置物体，随机大小、随机位置。
+        :param sound_source: str, 声源物体的名称。该物体不会被移动或放大缩小。
+        """
+        RESIZE_BOUNDS = [0.5, 3]
+        
+        for obj in self.objs:
+            if obj.name == sound_source:
+                # 声源物体不会被移动或放大缩小
+                rotate_vector = torch.zeros(3).cuda()
+                move_vector = torch.zeros(3).cuda()
+                resize_vector = torch.ones(1).cuda()
+            else:
+                # 非声源物体随机移动、旋转、缩放
+                rotate_vector = torch.rand(3).cuda()
+                move_vector = torch.rand(3).cuda() * 2 - 1
+                resize_vector = torch.rand(1).cuda() * (RESIZE_BOUNDS[1] - RESIZE_BOUNDS[0]) + RESIZE_BOUNDS[0]
+            # 应用变换
+            obj.move_the_object(move_vector, rotate_vector, resize_vector)
+        
+        # TODO: 碰撞检测
+        
+        
+        # 组装场景
+        self.vertices = torch.zeros(0, 3).cuda().to(torch.float32)
+        self.triangles = torch.zeros(0, 3).cuda().to(torch.int32)
+        self.neumann = torch.zeros(0).cuda().to(torch.complex64)
+        for obj in self.objs:
+            self.triangles = torch.cat(
+                [self.triangles, obj.triangles + len(self.vertices)]
+            )
+          #  breakpoint()
+            self.vertices = torch.cat([self.vertices, obj.vertices])
+            self.neumann = torch.cat([self.neumann, obj.neumann])
+        # 保证顶点和三角形的顺序是连续的
+        self.vertices = self.vertices.contiguous().float()
+        self.triangles = self.triangles.contiguous().int()
+        # 随机选择频率
+        self.freq_factor = torch.rand(1).cuda()   # 0~1 之间的随机数，0对应最小频率，1对应最大频率
+        freq_log = (
+            self.freq_factor * (self.freq_max_log - self.freq_min_log)
+            + self.freq_min_log
+        )
+        freq = 10**freq_log
+        self.k = (2 * np.pi * freq / 343.2).item()
+
+
+
     def sample(self, max_resize=2, log=False):
         '''
         Sample the scene: Randomly resize, rotate and move the objects for once and
@@ -236,8 +311,10 @@ class Scene:
         rot_factors = torch.rand(self.rot_num).cuda()
         move_factors = torch.rand(self.move_num).cuda()
         obj_list_factors = torch.rand(self.obj_list_num).cuda()
-        resize_factor = torch.rand(1).cuda()
-        freq_factor = torch.rand(1).cuda()
+        #resize_factor = torch.rand(1).cuda()
+        resize_factor = torch.ones(1).cuda() * 0.5
+        #freq_factor = torch.rand(1).cuda()
+        freq_factor = torch.ones(1).cuda() * 0.5
         rot_idx = 0
         move_idx = 0
         obj_list_idx = 0
@@ -257,11 +334,12 @@ class Scene:
                 if obj.rot_axis is not None and rot_idx < self.rot_num - 1:
                     rot_idx += 1
             if self.move_num > 0:
-                obj.move(move_factors[move_idx].item())
-                if log and obj.move_vec is not None:
-                    print(obj.name, "move idx:", move_idx)
-                if obj.move_vec is not None and move_idx < self.move_num - 1:
-                    move_idx += 1
+                if obj.name != "phone.obj": 
+                    obj.move(move_factors[move_idx].item())
+                    if log and obj.move_vec is not None:
+                        print(obj.name, "move idx:", move_idx)
+                    if obj.move_vec is not None and move_idx < self.move_num - 1:
+                        move_idx += 1
             obj.shift()
         self.vertices = torch.zeros(0, 3).cuda().to(torch.float32)
         self.triangles = torch.zeros(0, 3).cuda().to(torch.int32)
@@ -650,3 +728,50 @@ def genarate_sample_scene(data_dir, data_name, src_sample_num = None, trg_sample
     os.makedirs(f"{data_dir}/data", exist_ok=True)
     torch.save({"x": x, "y": y}, f"{data_dir}/data/{data_name}.pt")
     return x, y
+
+
+def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, trg_sample_num = None , show_scene:bool=False):
+    '''
+    一个简化版的generate_sample_scene。
+    对每个场景，只生成一个样本，并存储相应的数据以及几何形状。
+    '''
+    scene = Scene(f"{data_dir}/config.json")
+    
+    if src_sample_num is None:
+        src_sample_num = scene.src_sample_num
+    if trg_sample_num is None:
+        trg_sample_num = scene.trg_sample_num
+        
+    for src_idx in tqdm(range(src_sample_num)):
+        scene.my_sample()
+        scene.solve()
+        x = torch.zeros(
+            trg_sample_num,
+            3 + scene.rot_num + scene.move_num + (1 if scene.resize else 0) + 1,
+            dtype=torch.float32,
+        )
+        y = torch.zeros(trg_sample_num, 1, dtype=torch.float32)
+        x[:, :3] = scene.trg_points#scene.trg_factor
+        '''
+        # 
+        if scene.rot_num > 0:
+            x[:, 3 : 3 + scene.rot_num] = scene.rot_factors
+        if scene.move_num > 0:
+            x[:, 3 + scene.rot_num : 3 + scene.rot_num + scene.move_num] = (
+                scene.move_factors
+            )
+        if scene.resize:
+            x[:, -2] = scene.resize_factor
+        '''
+        x[:, -1] = scene.freq_factor
+        y = scene.potential.abs().unsqueeze(-1)
+
+        if src_idx != 0 and show_scene:
+            scene.show()
+            
+        # 存储x，y以及几何形状  trg_points
+        torch.save({"x": x, "y": y}, f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt")
+        # 以obj格式存储几何形状
+        import trimesh
+        mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+        mesh.export(f"{data_dir}/data/train_obj/{data_name}_{src_idx}.obj")
