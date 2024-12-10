@@ -1,0 +1,39 @@
+{
+    "obj": [
+        {
+            "mesh": "phone.obj",
+            "size": 0.1,
+            "position": [
+                0.0,
+                -0.07,
+                0
+            ],
+            "vibration": "-y"
+        },
+        {
+            "mesh": "cup.obj",
+            "size": 0.2,
+            "position": [
+                0,
+                0,
+                0
+            ]
+        }
+    ],
+    "solver": {
+        "src_sample_num": 10,
+        "trg_sample_num": 10000,
+        "freq_min": 1000,
+        "freq_max": 1000,
+        "trg_pos_min": [
+            -0.2,
+            -0.2,
+            -0.2
+        ],
+        "trg_pos_max": [
+            0.2,
+            0.2,
+            0.2
+        ]
+    }
+}

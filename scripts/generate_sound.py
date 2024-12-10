@@ -8,8 +8,8 @@ import json
 import numpy as np
 from src.SoundGen import generate_sound_static
 
-def main(data_dir, output_file, n_fft, sampling_rate, cache, save_fig):
-    generate_sound_static(data_dir, output_file, n_fft=n_fft, sampling_rate=sampling_rate, cache=cache, save_fig=save_fig)
+def main(data_dir, output_file, n_fft, sampling_rate, cache, save_fig, stereo=False):
+    generate_sound_static(data_dir, output_file, n_fft=n_fft, sampling_rate=sampling_rate, cache=cache, save_fig=save_fig, stereo=stereo)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate sound using stable method.")
@@ -19,6 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("--sampling_rate", "-sr", type=int, default=16000, help="Sampling rate.")
     parser.add_argument("--cache", "-c", type=bool, default=False, help="Use cache or not.")
     parser.add_argument("--figure", "-f", type=bool, default=False, help="Save the spectrograms as figures.")
+    parser.add_argument("--stereo", "-s", type=bool, default=False, help="Generate stereo audio.")
 
     args = parser.parse_args()
     

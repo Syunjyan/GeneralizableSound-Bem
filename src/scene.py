@@ -688,7 +688,7 @@ def initial_files(data_dir):
 
 
 
-def genarate_sample_scene(data_dir, data_name, src_sample_num = None, trg_sample_num = None , show_scene:bool=False):
+def generate_sample_scene(data_dir, data_name, src_sample_num = None, trg_sample_num = None , show_scene:bool=False):
     '''
     Generate the scene data and save it to the data_dir/data/data_name.pt
     '''
@@ -721,6 +721,9 @@ def genarate_sample_scene(data_dir, data_name, src_sample_num = None, trg_sample
             x[src_idx, :, -2] = scene.resize_factor
         x[src_idx, :, -1] = scene.freq_factor
         y[src_idx] = scene.potential.abs().unsqueeze(-1)
+
+        # print("nan in y:", int(torch.isnan(y[src_idx]).sum()))
+        # print("the range of y:", y[src_idx].min(), y[src_idx].max())
 
         if src_idx == 0 and show_scene:
             scene.show()

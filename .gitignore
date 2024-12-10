@@ -3,6 +3,7 @@
 .vscode
 output
 .exafmm
+dataset/*/spectrogram
 dataset/spectrogram
 *.pt
 *.png

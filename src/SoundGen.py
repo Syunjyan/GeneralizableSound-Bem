@@ -5,7 +5,7 @@ import torch
 from glob import glob
 from tqdm import tqdm
 import json
-from src.utils import calculate_bin_frequencies, Visualizer, apply_spec_mask_to_audio
+from src.utils import *
 from scipy.spatial.transform import Rotation as R
 from src.scene import *
 import numpy as np
@@ -35,7 +35,7 @@ def scene_eval(scene: Scene, x_data, freq_pos,
     '''
     **Warning!** This function dose not support dynamic scene parameters.
 
-    For stable scene, we sample the scene for `freq_num` times and solve the trg_points in animation data.
+    For static scene, we sample the scene for `freq_num` times and solve the trg_points in animation data.
     '''
     current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     # print("Current directory:", current_dir)
@@ -86,16 +86,17 @@ def scene_eval(scene: Scene, x_data, freq_pos,
 
 
 def generate_sound_static(data_dir, audio_name, n_fft=128, sampling_rate=16000, 
-                          cache=False, save_fig=False):
+                          cache=False, save_fig=False, stereo=False):
     """
     Generate sound from animation data and a static scene configuration.
     Parameters:
     data_dir (str): Directory containing the configuration and animation data files.
     audio_name (str): Name of the output audio file.
-    n_fft (int, optional): Number of FFT components. Default is 128.
-    sampling_rate (int, optional): Sampling rate of the audio. Default is 16000.
-    cache (bool, optional): Whether to cache intermediate results. Default is False.
-    save_fig (bool, optional): Whether to save the spectrogram heatmap as a figure. Default is False.
+    n_fft (int, optional): Number of FFT components. 
+    sampling_rate (int, optional): Sampling rate of the audio. 
+    cache (bool, optional): Whether to cache intermediate results. 
+    save_fig (bool, optional): Whether to save the spectrogram heatmap as a figure. 
+    stereo (bool, optional): Whether to generate stereo audio.
     Returns:
     None
     Notes:
@@ -146,19 +147,23 @@ def generate_sound_static(data_dir, audio_name, n_fft=128, sampling_rate=16000,
         plt.title("Heatmap of nc_spec")
         plt.xlabel("Frequency Bins")
         plt.ylabel("Source Number")
-        plt.savefig(f"dataset/spectrogram/nc_spec_heatmap.png")
+        # mkdir
+        os.makedirs(f"{data_dir}/spectrogram", exist_ok=True)
+        plt.savefig(f"{data_dir}/spectrogram/nc_spec_heatmap.png")
         plt.close()
 
-    audio = apply_spec_mask_to_audio(
-        1, nc_spec, src_num, n_fft=n_fft, animation_frame_rate=fps, trg_sample_rate=sampling_rate,
-        save_spec=True
-    )
+    if stereo:
+        audio = apply_spec_mask_to_audio_stereo(
+            1, nc_spec, src_num, n_fft=n_fft, animation_frame_rate=fps, trg_sample_rate=sampling_rate,
+            save_spec=True, save_path=f"{data_dir}/spectrogram"
+        )
+    else:
+        audio = apply_spec_mask_to_audio(
+            1, nc_spec, src_num, n_fft=n_fft, animation_frame_rate=fps, trg_sample_rate=sampling_rate,
+            save_spec=True, save_path=f"{data_dir}/spectrogram"
+        )
 
     wavfile.write(f"{data_dir}/{audio_name}", sampling_rate, audio)
-
-# Example usage:
-# generate_sound_stable("dataset/fix", "audio_1.wav")
-
 
 
 def generate_sound_dynamic():
