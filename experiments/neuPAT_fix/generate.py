@@ -4,10 +4,26 @@ sys.path.append("./")
 
 from src.scene import Scene,genarate_sample_scene, generate_sample_scene_simpler
 import torch
+import os, sys
 from tqdm import tqdm
 
+# 2024.12.12 
+# 选取不同的障碍物，生成数据。
 data_dir = "dataset/fix"
-generate_sample_scene_simpler(data_dir, sys.argv[1], show_scene=True)
+# 新建文件夹
+os.makedirs(f"{data_dir}/data/train_mesh", exist_ok=True)
+os.makedirs(f"{data_dir}/data/train_data", exist_ok=True)
+
+
+obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
+# 过滤掉非 obj 物体
+obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
+for i, obstacles_name in enumerate(obstacles_name_list):
+    print(f"obstacles_name: {obstacles_name}, {i+1}/{len(obstacles_name_list)}")
+    # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
+    os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
+    # 生成数据
+    generate_sample_scene_simpler(data_dir, f"out_{i}", show_scene=False)
 
 
 '''

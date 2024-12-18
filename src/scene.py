@@ -251,13 +251,20 @@ class Scene:
 
 
     def my_sample(self, max_resize=2, log=False,
-                  sound_source: str="phone.obj"
+                  sound_source: str="phone.obj",
+                  seed: int=0,
+                  freq_idx: int=0,
+                  max_freq_idx: int=50,
                   ):
         """
         一个较为简单的取样，在场景内随机放置物体，随机大小、随机位置。
         :param sound_source: str, 声源物体的名称。该物体不会被移动或放大缩小。
         """
-        RESIZE_BOUNDS = [0.5, 3]
+        RESIZE_BOUNDS = [1., 2.]
+        MOVE_BOUNDS = [-0.2, 0.2]
+        
+        torch.manual_seed(seed)
+        np.random.seed(int(seed * 100000) % 1000000007)
         
         for obj in self.objs:
             if obj.name == sound_source:
@@ -267,8 +274,8 @@ class Scene:
                 resize_vector = torch.ones(1).cuda()
             else:
                 # 非声源物体随机移动、旋转、缩放
-                rotate_vector = torch.rand(3).cuda()
-                move_vector = torch.rand(3).cuda() * 2 - 1
+                rotate_vector = torch.rand(3).cuda() * 100000
+                move_vector = torch.rand(3).cuda() * (MOVE_BOUNDS[1] - MOVE_BOUNDS[0]) + MOVE_BOUNDS[0]
                 resize_vector = torch.rand(1).cuda() * (RESIZE_BOUNDS[1] - RESIZE_BOUNDS[0]) + RESIZE_BOUNDS[0]
             # 应用变换
             obj.move_the_object(move_vector, rotate_vector, resize_vector)
@@ -291,7 +298,7 @@ class Scene:
         self.vertices = self.vertices.contiguous().float()
         self.triangles = self.triangles.contiguous().int()
         # 随机选择频率
-        self.freq_factor = torch.rand(1).cuda()   # 0~1 之间的随机数，0对应最小频率，1对应最大频率
+        self.freq_factor = torch.tensor(freq_idx / max_freq_idx).cuda()
         freq_log = (
             self.freq_factor * (self.freq_max_log - self.freq_min_log)
             + self.freq_min_log
@@ -474,12 +481,14 @@ class Scene:
             self.k, self.neumann, self.dirichlet, self.trg_points
         ).cpu()
 
-    def show(self):
-        vis = Visualizer()
-        vis.add_mesh(self.vertices, self.triangles, self.neumann.abs())
-        if self.trg_points is not None:
-            vis.add_points(self.trg_points, self.potential.abs())
-        vis.show()
+    def show(self, logged_values=False):
+        # logged_values: bool, if True, the values will take a log transformation
+        if logged_values == False:
+            vis = Visualizer()
+            vis.add_mesh(self.vertices, self.triangles, torch.log10(torch.clip(self.neumann.abs(), 1e-6, 1e6)))
+            if self.trg_points is not None:
+                vis.add_points(self.trg_points, torch.log10(torch.clip(self.potential.abs(), 1e-6, 1e6)))
+            vis.show()
 
 
 class EditableModalSound:
@@ -743,35 +752,28 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
         trg_sample_num = scene.trg_sample_num
         
     for src_idx in tqdm(range(src_sample_num)):
-        scene.my_sample()
-        scene.solve()
+        import time
+        seed = time.time()
         x = torch.zeros(
-            trg_sample_num,
-            3 + scene.rot_num + scene.move_num + (1 if scene.resize else 0) + 1,
-            dtype=torch.float32,
-        )
-        y = torch.zeros(trg_sample_num, 1, dtype=torch.float32)
-        x[:, :3] = scene.trg_points#scene.trg_factor
-        '''
-        # 
-        if scene.rot_num > 0:
-            x[:, 3 : 3 + scene.rot_num] = scene.rot_factors
-        if scene.move_num > 0:
-            x[:, 3 + scene.rot_num : 3 + scene.rot_num + scene.move_num] = (
-                scene.move_factors
+                trg_sample_num, 3,
+                dtype=torch.float32,
             )
-        if scene.resize:
-            x[:, -2] = scene.resize_factor
-        '''
-        x[:, -1] = scene.freq_factor
-        y = scene.potential.abs().unsqueeze(-1)
+        y = torch.zeros(trg_sample_num, 50, dtype=torch.float32)
+        for freq_idx in tqdm(range(50)):
+            scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=50)
+            scene.solve()
+            x[:, :3] = scene.trg_points
+         #   x[:, :3] = scene.trg_points#scene.trg_factor
+         #   x[:, -1] = scene.freq_factor
+         
+            y[:, freq_idx] = scene.potential.abs()#.unsqueeze(-1)
 
-        if src_idx != 0 and show_scene:
-            scene.show()
-            
+         #   if src_idx != 0 and show_scene:
+         #       scene.show()
+                
         # 存储x，y以及几何形状  trg_points
         torch.save({"x": x, "y": y}, f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt")
         # 以obj格式存储几何形状
         import trimesh
         mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
-        mesh.export(f"{data_dir}/data/train_obj/{data_name}_{src_idx}.obj")
+        mesh.export(f"{data_dir}/data/train_mesh/{data_name}_{src_idx}.obj")

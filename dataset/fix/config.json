@@ -11,7 +11,7 @@
             "vibration": "-y"
         },
         {
-            "mesh": "cup.obj",
+            "mesh": "obstacle.obj",
             "size": 0.2,
             "position": [
                 0,
@@ -23,8 +23,8 @@
     "solver": {
         "src_sample_num": 10,
         "trg_sample_num": 10000,
-        "freq_min": 1000,
-        "freq_max": 1000,
+        "freq_min": 100,
+        "freq_max": 10000,
         "trg_pos_min": [
             -0.2,
             -0.2,
