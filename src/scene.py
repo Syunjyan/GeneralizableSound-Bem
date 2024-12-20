@@ -743,6 +743,7 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
     '''
     一个简化版的generate_sample_scene。
     对每个场景，只生成一个样本，并存储相应的数据以及几何形状。
+    注意，此代码使用 cuda，而且基本能吃满整个GPU，所以没有多进程的必要。
     '''
     scene = Scene(f"{data_dir}/config.json")
     
@@ -758,9 +759,9 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
                 trg_sample_num, 3,
                 dtype=torch.float32,
             )
-        y = torch.zeros(trg_sample_num, 50, dtype=torch.float32)
-        for freq_idx in tqdm(range(50)):
-            scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=50)
+        y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
+        for freq_idx in tqdm(range(65)):
+            scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65)
             scene.solve()
             x[:, :3] = scene.trg_points
          #   x[:, :3] = scene.trg_points#scene.trg_factor
