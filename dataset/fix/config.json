@@ -1,11 +1,11 @@
 {
     "obj": [
         {
-            "mesh": "phone.obj",
-            "size": 0.1,
+            "mesh": "ball.obj",
+            "size": 0.03,
             "position": [
-                0.0,
-                0.05,
+                0,
+                0,
                 0
             ],
             "vibration": "-y"

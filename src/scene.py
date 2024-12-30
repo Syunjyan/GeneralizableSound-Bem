@@ -148,16 +148,19 @@ class Obj:
         self.neumann = torch.zeros(
             len(self.vertices_base), dtype=torch.complex64, device="cuda"
         )
+        # TODO: 这里改为点声源
         if self.vibration is not None:
-            self.neg = False
-            if "-" in self.vibration:
-                self.neg = True
-                self.vibration = self.vibration.replace("-", "")
-            idx = 0 if "x" in self.vibration else 1 if "y" in self.vibration else 2
-            if self.neg:
-                self.neumann[self.vertices_base[:, idx] < 0] = 1
-            else:
-                self.neumann[self.vertices_base[:, idx] > 0] = 1
+            # self.neg = False
+            self.neg = None
+            # if "-" in self.vibration:
+            #     self.neg = True
+            #     self.vibration = self.vibration.replace("-", "")
+            # idx = 0 if "x" in self.vibration else 1 if "y" in self.vibration else 2
+            # if self.neg:
+            #     self.neumann[self.vertices_base[:, idx] < 0] = 1
+            # else:
+            #     self.neumann[self.vertices_base[:, idx] > 0] = 1
+            self.neumann = torch.ones(len(self.vertices_base), dtype=torch.complex64, device="cuda")
 
     def reset(self):
         self.vertices = self.vertices_base.clone()
@@ -248,6 +251,9 @@ class Scene:
         self.bbox_size = (self.trg_pos_max - self.trg_pos_min).max()
         self.bbox_center = (self.trg_pos_max + self.trg_pos_min) / 2
         self.trg_points = None
+        # magic number
+        from .utils import calculate_bin_frequencies
+        self.freq_bins = calculate_bin_frequencies()
 
 
     def my_sample(self, max_resize=2, log=False,
@@ -297,13 +303,15 @@ class Scene:
         # 保证顶点和三角形的顺序是连续的
         self.vertices = self.vertices.contiguous().float()
         self.triangles = self.triangles.contiguous().int()
-        # 随机选择频率
-        self.freq_factor = torch.tensor(freq_idx / max_freq_idx).cuda()
-        freq_log = (
-            self.freq_factor * (self.freq_max_log - self.freq_min_log)
-            + self.freq_min_log
-        )
-        freq = 10**freq_log
+        # 选择频率
+        # self.freq_factor = torch.tensor(freq_idx / max_freq_idx).cuda()
+        # freq_log = (
+        #     self.freq_factor * (self.freq_max_log - self.freq_min_log)
+        #     + self.freq_min_log
+        # )
+        # freq = 10**freq_log
+        freq = torch.tensor(max(self.freq_min, min(self.freq_max, self.freq_bins[freq_idx])))
+        self.freq_factor = torch.tensor((np.log10(freq) - self.freq_min_log) / (self.freq_max_log - self.freq_min_log)).cuda()
         self.k = (2 * np.pi * freq / 343.2).item()
 
 
@@ -761,7 +769,7 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
             )
         y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
         for freq_idx in tqdm(range(65)):
-            scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65)
+            scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source='ball.obj')
             scene.solve()
             x[:, :3] = scene.trg_points
          #   x[:, :3] = scene.trg_points#scene.trg_factor
