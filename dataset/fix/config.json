@@ -2,19 +2,19 @@
     "obj": [
         {
             "mesh": "ball.obj",
-            "size": 0.03,
+            "size": 0.01,
             "position": [
                 0,
                 0,
                 0
             ],
-            "vibration": "-y"
+            "vibration": "x"
         },
         {
             "mesh": "obstacle.obj",
             "size": 0.2,
             "position": [
-                0,
+                0.05,
                 0,
                 0
             ]

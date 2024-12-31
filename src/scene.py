@@ -151,7 +151,6 @@ class Obj:
         # TODO: 这里改为点声源
         if self.vibration is not None:
             # self.neg = False
-            self.neg = None
             # if "-" in self.vibration:
             #     self.neg = True
             #     self.vibration = self.vibration.replace("-", "")
@@ -160,6 +159,7 @@ class Obj:
             #     self.neumann[self.vertices_base[:, idx] < 0] = 1
             # else:
             #     self.neumann[self.vertices_base[:, idx] > 0] = 1
+            self.neg = None
             self.neumann = torch.ones(len(self.vertices_base), dtype=torch.complex64, device="cuda")
 
     def reset(self):
