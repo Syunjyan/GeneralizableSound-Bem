@@ -39,6 +39,9 @@ obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
 # 过滤掉非 obj 物体
 obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
 
+available_gpus = detect_available_gpu()
+print(f"available_gpus: {available_gpus}")
+
 for i, obstacles_name in enumerate(obstacles_name_list):
     
     print(f"obstacles_name: {obstacles_name}, {i+1}/{len(obstacles_name_list)}")
@@ -48,9 +51,6 @@ for i, obstacles_name in enumerate(obstacles_name_list):
     # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
     def generate_data(data_dir, tag, gpu_id):
         os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper.py {data_dir} {tag} {gpu_id}")
-
-    available_gpus = detect_available_gpu()
-    print(f"available_gpus: {available_gpus}")
     
     pool = multiprocessing.Pool(processes=len(available_gpus))
     for gpu_id in available_gpus:
