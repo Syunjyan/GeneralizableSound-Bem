@@ -768,9 +768,15 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
                 dtype=torch.float32,
             )
         y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
+        old = None
         for freq_idx in tqdm(range(65)):
             scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source='ball.obj')
             scene.solve()
+            if old is None:
+                old = scene.trg_points
+            else:
+                assert torch.all(old == scene.trg_points), "trg_points not equal"
+
             x[:, :3] = scene.trg_points
          #   x[:, :3] = scene.trg_points#scene.trg_factor
          #   x[:, -1] = scene.freq_factor
