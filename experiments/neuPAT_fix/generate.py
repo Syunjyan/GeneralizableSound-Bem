@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("./")
 
-from src.scene import Scene,genarate_sample_scene, generate_sample_scene_simpler
+from src.scene import Scene, generate_sample_scene_simpler
 import torch
 import os, sys
 from tqdm import tqdm
@@ -28,7 +28,7 @@ def detect_available_gpu(max_num_gpu=4):
         max_num_gpu = 100000
     for i, power in enumerate(gpu_info[1:]):
         power = float(power[:-2])
-        if power < 50:
+        if power < 120:
             available_gpu.append(i)
         if len(available_gpu) == max_num_gpu:
             break
