@@ -281,7 +281,9 @@ class Scene:
             else:
                 # 非声源物体随机移动、旋转、缩放
                 rotate_vector = torch.rand(3).cuda() * 100000
+                # 若不想移动，可以将 move_vector 设置为 0
                 move_vector = torch.rand(3).cuda() * (MOVE_BOUNDS[1] - MOVE_BOUNDS[0]) + MOVE_BOUNDS[0]
+                #move_vector = torch.zeros(3).cuda()
                 resize_vector = torch.rand(1).cuda() * (RESIZE_BOUNDS[1] - RESIZE_BOUNDS[0]) + RESIZE_BOUNDS[0]
             # 应用变换
             obj.move_the_object(move_vector, rotate_vector, resize_vector)
@@ -764,8 +766,8 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
         trg_sample_num = scene.trg_sample_num
         
     for src_idx in tqdm(range(src_sample_num)):
-        import time
-        seed = time.time()
+        random_int = np.random.randint(1000000000)
+        seed = random_int % 1000000000
         x = torch.zeros(
                 trg_sample_num, 3,
                 dtype=torch.float32,
