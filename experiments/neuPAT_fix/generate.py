@@ -60,7 +60,21 @@ for i, obstacles_name in enumerate(obstacles_name_list):
     pool.close()
     pool.join()
     
-    
+# 2025.1.14
+# 划分训练集和测试集，其中测试集包含部分训练集中没有的mesh。
+
+
+
+
+
+
+
+
+
+
+# 2025.1.14
+# 添加半包围数据集的生成代码。与障碍物相比，半包围障碍的bounding box应将声源包括住。
+
 
 
 '''

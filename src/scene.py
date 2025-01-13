@@ -150,17 +150,20 @@ class Obj:
         )
         # TODO: 这里改为点声源
         if self.vibration is not None:
-            # self.neg = False
-            # if "-" in self.vibration:
-            #     self.neg = True
-            #     self.vibration = self.vibration.replace("-", "")
-            # idx = 0 if "x" in self.vibration else 1 if "y" in self.vibration else 2
-            # if self.neg:
-            #     self.neumann[self.vertices_base[:, idx] < 0] = 1
-            # else:
-            #     self.neumann[self.vertices_base[:, idx] > 0] = 1
-            self.neg = None
-            self.neumann = torch.ones(len(self.vertices_base), dtype=torch.complex64, device="cuda")
+            if "w" in self.vibration: # 全向声源
+                self.neg = None
+                self.neumann = torch.ones(len(self.vertices_base), dtype=torch.complex64, device="cuda")
+            else:
+                self.neg = False
+                if "-" in self.vibration:
+                    self.neg = True
+                    self.vibration = self.vibration.replace("-", "")
+                idx = 0 if "x" in self.vibration else 1 if "y" in self.vibration else 2
+                if self.neg:
+                    self.neumann[self.vertices_base[:, idx] < 0] = 1
+                else:
+                    self.neumann[self.vertices_base[:, idx] > 0] = 1
+                
 
     def reset(self):
         self.vertices = self.vertices_base.clone()
@@ -317,6 +320,21 @@ class Scene:
         self.k = (2 * np.pi * freq / 343.2).item()
 
 
+    def enclose_sample(self, max_resize=2, log=False,
+                    sound_source: str="phone.obj",
+                    seed: int=0,
+                    freq_idx: int=0,
+                    max_freq_idx: int=50,
+                    ):
+        '''
+        用于生成半包围障碍物的场景。逻辑与`my_sample`类似。
+        在处理`MOVE_BOUNDS`时，要注意将声源物体的bbox保持在半包围障碍物的bbox内。
+        '''
+        RESIZE_BOUNDS = [1., 2.]
+
+        # 计算声源物体的bbox
+
+
 
     def sample(self, max_resize=2, log=False):
         '''
@@ -385,6 +403,7 @@ class Scene:
                 obj_list_factors:torch.Tensor=None, resize_factor:torch.Tensor=None, 
                 freq_factor:torch.Tensor=None):
         '''
+        手动设置场景参数，用于第一版的groundtruth声音合成。
         Manually set the scene parameters. Instead of randomly sampling, the scene is set by the given factors.
 
         We suggest to define the frequency manually, as the frequency is the main parameter of the scene. Otherwise, the frequency will be randomly sampled.
@@ -797,3 +816,10 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
         import trimesh
         mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
         mesh.export(f"{data_dir}/data/train_mesh/{data_name}_{src_idx}.obj")
+
+def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sample_num = None , show_scene:bool=False):
+    '''
+    同`generate_sample_scene_simpler`, 但是生成的场景是声源被半包围障碍物包围的场景。
+    scene的sample方式不能对障碍物进行大量的偏移，要保证声源物体的bbox在障碍物内部。
+    '''
+    scene = Scene(f"{data_dir}/config.json")
