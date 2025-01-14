@@ -14,11 +14,11 @@ if __name__ == "__main__":
     gpu_id = int(sys.argv[3])
     mode = 'train'
 
+    src_num = None
     if len(sys.argv) > 4:
         src_num = int(sys.argv[4])
         mode = sys.argv[5]
     
-    src_num = None
     if mode != 'train':
         src_num = 1 # only 1 source in test and val
 

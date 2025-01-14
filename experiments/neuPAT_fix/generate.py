@@ -41,7 +41,9 @@ obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
 # 过滤掉非 obj 物体
 obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
 
-available_gpus = detect_available_gpu()
+# available_gpus = detect_available_gpu()
+# available_gpus = [0, 1, 2, 3]
+available_gpus = [4, 5, 6, 7]
 # 强行分配四卡
 print(f"available_gpus: {available_gpus}")
 
@@ -80,44 +82,45 @@ val_obstacles = obstacles_name_list
 
 # 训练集
 
-# for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train obstacles")):
+for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train obstacles")):
     
-#     # print(f"obstacles_name: {obstacles_name}, {i+1}/{len(train_obstacles)}")
-#     # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
-#     os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
+    # print(f"obstacles_name: {obstacles_name}, {i+1}/{len(train_obstacles)}")
+    # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
+    os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
     
-#     # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
-#     def generate_data(data_dir, tag, gpu_id, src_num, mode):
-#         os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+    # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
+    def generate_data(data_dir, tag, gpu_id, src_num, mode):
+        os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
     
-#     pool = multiprocessing.Pool(processes=len(available_gpus))
-#     for gpu_id in available_gpus:
-#         tag = str(gpu_id) + "_" + str(i)
-#         pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, TRAIN_SRC_DATASIZE//len(available_gpus), "train"))
+    pool = multiprocessing.Pool(processes=len(available_gpus))
+    for gpu_id in available_gpus:
+        tag = str(gpu_id) + "_" + str(i)
+        pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, TRAIN_SRC_DATASIZE//len(available_gpus), "train"))
         
-#     pool.close()
-#     pool.join()
+    pool.close()
+    pool.join()
 
 
 # 测试集
-# for i, obstacles_name in enumerate(tqdm(val_obstacles, desc="Processing val obstacles")):
+for i, obstacles_name in enumerate(tqdm(val_obstacles, desc="Processing val obstacles")):
     
-#     # print(f"obstacles_name: {obstacles_name}, {i+1}/{len(val_obstacles)}")
-#     # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
-#     os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
+    # print(f"obstacles_name: {obstacles_name}, {i+1}/{len(val_obstacles)}")
+    # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
+    os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
     
-#     # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
-#     def generate_data(data_dir, tag, gpu_id, src_num, mode):
-#         os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+    # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
+    def generate_data(data_dir, tag, gpu_id, src_num, mode):
+        os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
     
-#     pool = multiprocessing.Pool(processes=len(available_gpus))
-#     for gpu_id in available_gpus:
-#         tag = str(gpu_id) + "_" + str(i)
-#         pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, 1, "val"))
+    pool = multiprocessing.Pool(processes=len(available_gpus))
+    for gpu_id in available_gpus:
+        tag = str(gpu_id) + "_" + str(i)
+        pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, 1, "val"))
         
-#     pool.close()
-#     pool.join()
+    pool.close()
+    pool.join()
 
+exit()
 
 
 # 2025.1.14
@@ -165,42 +168,3 @@ for i, obstacles_name in enumerate(tqdm(val_obstacles, desc="Processing val encl
         
     pool.close()
     pool.join()
-
-
-'''
-import sys
-
-sys.path.append("./")
-
-from src.scene import Scene
-import torch
-from tqdm import tqdm
-
-data_dir = "dataset/NeuPAT_new/fix"
-
-scene = Scene(f"{data_dir}/config.json")
-
-x = torch.zeros(
-    scene.src_sample_num,
-    scene.trg_sample_num,
-    3 + 1,
-    dtype=torch.float32,
-)
-# 3 for trg sample position, 1 for freq
-
-y = torch.zeros(scene.src_sample_num, scene.trg_sample_num, 1, dtype=torch.float32)
-
-for src_idx in tqdm(range(scene.src_sample_num)):
-    scene.sample()
-    scene.solve()
-    x[src_idx, :, :3] = scene.trg_factor
-    x[src_idx, :, -1] = scene.freq_factor
-    y[src_idx] = scene.potential.abs().unsqueeze(-1)
-
-    if src_idx == 0:
-        scene.show()
-
-
-torch.save({"x": x, "y": y}, f"{data_dir}/data/{sys.argv[1]}.pt")
-
-'''

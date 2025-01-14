@@ -356,10 +356,12 @@ class Scene:
                 raise ValueError(f"The '{obj.name}' scene object is not found.")
         
         obstacle_bbox *= 0.4 # 尽量保持声源物体bbox球 在 障碍物体内
-        if sound_source_bbox > obstacle_bbox:
-            raise ValueError("The sound source bbox is larger than the obstacle bbox.")
 
         move_bounds = [-obstacle_bbox + sound_source_bbox, obstacle_bbox - sound_source_bbox]
+        if sound_source_bbox > obstacle_bbox:
+            # raise ValueError("The sound source bbox is larger than the obstacle bbox.")
+            move_bounds = [0,0]
+
 
         for obj in self.objs:
             if obj.name == sound_source:
