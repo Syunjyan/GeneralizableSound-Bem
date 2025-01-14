@@ -23,7 +23,7 @@ if __name__ == "__main__":
         src_num = 1 # only 1 source in test and val
 
     #os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-    # print(f"started a process. gpu_id: {gpu_id}")
+    print(f"started a process. gpu_id: {gpu_id}")
 
     generate_sample_scene_simpler(data_dir, f"out_{tag}", 
                                   src_sample_num=src_num,

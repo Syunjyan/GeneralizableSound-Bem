@@ -40,7 +40,7 @@ def detect_available_gpu(max_num_gpu=4, power_threshold=130):
             break
     return available_gpu
 
-os.environ["TORCH_CUDA_ARCH_LIST"]=8.6
+# os.environ["TORCH_CUDA_ARCH_LIST]="8.9"
 
 obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
 # 过滤掉非 obj 物体
@@ -49,7 +49,7 @@ obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list 
 # available_gpus = detect_available_gpu()
 available_gpus = None
 if args.gpu_set == 0:
-    available_gpus = [0, 1, 2] # 留一块防炸
+    available_gpus = [0, 1, 2, 3] # 留一块防炸
 else:
     available_gpus = [4, 5, 6, 7]
 # 强行分配四卡
@@ -159,7 +159,7 @@ else:
         os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_phone/generate_helper2.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
 
     # 训练集
-    for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train enclosed obstacles")):
+    for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train enclosed obstacles", leave=True)):
         
         # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
         os.system(f"cp {os.path.join(data_dir, 'enclosed_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
