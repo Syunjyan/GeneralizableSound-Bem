@@ -46,9 +46,9 @@ obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
 obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
 
 # available_gpus = detect_available_gpu()
-available_gpus = [0, 1, 2, 3]
+available_gpus = None
 if args.gpu_set == 0:
-    available_gpus = [0, 1, 2, 3]
+    available_gpus = [0, 1, 2] # 留一块防炸
 else:
     available_gpus = [4, 5, 6, 7]
 # 强行分配四卡
@@ -172,6 +172,7 @@ else:
         pool.close()
         pool.join()
 
+    # 测试集
     for i, obstacles_name in enumerate(tqdm(val_obstacles, desc="Processing val enclosed obstacles")):
         # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
         os.system(f"cp {os.path.join(data_dir, 'enclosed_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
