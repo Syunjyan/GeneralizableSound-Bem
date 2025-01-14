@@ -328,11 +328,66 @@ class Scene:
                     ):
         '''
         用于生成半包围障碍物的场景。逻辑与`my_sample`类似。
-        在处理`MOVE_BOUNDS`时，要注意将声源物体的bbox保持在半包围障碍物的bbox内。
+        在处理`MOVE_BOUNDS`时，要注意将声源物体的bbox保持在半包围障碍物的bbox内。(假设只有一个障碍物)
         '''
         RESIZE_BOUNDS = [1., 2.]
+        move_bounds = None
 
-        # 计算声源物体的bbox
+        # 计算声源物体的bbox, 取最长边值
+        sound_source_bbox = torch.zeros(1).cuda()
+        # 计算障碍物的bbox，取最短边值
+        obstacle_bbox = torch.zeros(1).cuda()
+
+        torch.manual_seed(seed)
+        np.random.seed(int(seed * 100000) % 1000000007)
+
+        rotate_vector = torch.rand(3).cuda() * 100000
+        resize_vector = torch.rand(1).cuda() * (RESIZE_BOUNDS[1] - RESIZE_BOUNDS[0]) + RESIZE_BOUNDS[0]
+
+        for obj in self.objs:
+            if obj.name == sound_source:
+                sound_source_bbox = (obj.vertices.max(dim=0)[0] - obj.vertices.min(dim=0)[0]).max()
+            if obj.name == "obstacle.obj":
+                obstacle_bbox = (obj.vertices.max(dim=0)[0] - obj.vertices.min(dim=0)[0]).min()
+                obstacle_bbox *= resize_vector.item()
+            else:
+                raise ValueError("The scene object is not found.")
+        
+        obstacle_bbox *= 0.7 # 尽量保持声源物体bbox球 在 障碍物体内
+        if sound_source_bbox > obstacle_bbox:
+            raise ValueError("The sound source bbox is larger than the obstacle bbox.")
+
+        move_bounds = [-obstacle_bbox + sound_source_bbox, obstacle_bbox - sound_source_bbox]
+
+        for obj in self.objs:
+            if obj.name == sound_source:
+                # 声源物体不会被移动或放大缩小
+                move_vector = torch.zeros(3).cuda()
+            else:
+                # 非声源物体随机移动、旋转、缩放
+                # 若不想移动，可以将 move_vector 设置为 0
+                move_vector = torch.rand(3).cuda() * (move_bounds[1] - move_bounds[0]) + move_bounds[0]
+                #move_vector = torch.zeros(3).cuda()
+            # 应用变换
+            obj.move_the_object(move_vector, rotate_vector, resize_vector)
+        
+        # 组装场景
+        self.vertices = torch.zeros(0, 3).cuda().to(torch.float32)
+        self.triangles = torch.zeros(0, 3).cuda().to(torch.int32)
+        self.neumann = torch.zeros(0).cuda().to(torch.complex64)
+        for obj in self.objs:
+            self.triangles = torch.cat(
+                [self.triangles, obj.triangles + len(self.vertices)]
+            )
+            self.vertices = torch.cat([self.vertices, obj.vertices])
+            self.neumann = torch.cat([self.neumann, obj.neumann])
+        # 保证顶点和三角形的顺序是连续的
+        self.vertices = self.vertices.contiguous().float()
+        self.triangles = self.triangles.contiguous().int()
+        # 选择频率
+        freq = torch.tensor(max(self.freq_min, min(self.freq_max, self.freq_bins[freq_idx])))
+        self.freq_factor = torch.tensor((np.log10(freq) - self.freq_min_log) / (self.freq_max_log - self.freq_min_log)).cuda()
+        self.k = (2 * np.pi * freq / 343.2).item()
 
 
 
@@ -771,7 +826,9 @@ def generate_sample_scene(data_dir, data_name, src_sample_num = None, trg_sample
     return x, y
 
 
-def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, trg_sample_num = None , show_scene:bool=False):
+def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, trg_sample_num = None ,
+                                   show_scene:bool=False,
+                                   split_mode:str = 'train'):
     '''
     一个简化版的generate_sample_scene。
     对每个场景，只生成一个样本，并存储相应的数据以及几何形状。
@@ -792,14 +849,9 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
                 dtype=torch.float32,
             )
         y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
-        old = None
         for freq_idx in tqdm(range(65)):
             scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source='ball.obj')
             scene.solve()
-            if old is None:
-                old = scene.trg_points
-            else:
-                assert torch.all(old == scene.trg_points), "trg_points not equal"
 
             x[:, :3] = scene.trg_points
          #   x[:, :3] = scene.trg_points#scene.trg_factor
@@ -811,15 +863,70 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
          #       scene.show()
                 
         # 存储x，y以及几何形状  trg_points
-        torch.save({"x": x, "y": y}, f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt")
-        # 以obj格式存储几何形状
-        import trimesh
-        mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
-        mesh.export(f"{data_dir}/data/train_mesh/{data_name}_{src_idx}.obj")
+        if split_mode == 'train':
+            torch.save({"x": x, "y": y}, f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt")
+            # 以obj格式存储几何形状
+            import trimesh
+            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh.export(f"{data_dir}/data/train_mesh/{data_name}_{src_idx}.obj")
+        else: # 测试集
+            torch.save({"x": x, "y": y}, f"{data_dir}/data/val_data/{data_name}_{src_idx}.pt")
+            # 以obj格式存储几何形状
+            import trimesh
+            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh.export(f"{data_dir}/data/val_mesh/{data_name}_{src_idx}.obj")
 
-def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sample_num = None , show_scene:bool=False):
+
+def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sample_num = None , 
+                             show_scene:bool=False,
+                             split_mode:str = 'train'
+                             ):
     '''
     同`generate_sample_scene_simpler`, 但是生成的场景是声源被半包围障碍物包围的场景。
     scene的sample方式不能对障碍物进行大量的偏移，要保证声源物体的bbox在障碍物内部。
     '''
     scene = Scene(f"{data_dir}/config.json")
+
+    if src_sample_num is None:
+        src_sample_num = scene.src_sample_num
+    if trg_sample_num is None:
+        trg_sample_num = scene.trg_sample_num
+        
+    for src_idx in tqdm(range(src_sample_num),desc=f"scene src", leave=False):
+        random_int = np.random.randint(1000000000)
+        seed = random_int % 1000000000
+        x = torch.zeros(
+                trg_sample_num, 3,
+                dtype=torch.float32,
+            )
+        y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
+        for freq_idx in tqdm(range(65),desc="Generating frequency index {}/65".format(freq_idx),leave=False):
+            
+            # 点声源
+            scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source='ball.obj')
+
+            scene.solve()
+
+            x[:, :3] = scene.trg_points
+         #   x[:, :3] = scene.trg_points#scene.trg_factor
+         #   x[:, -1] = scene.freq_factor
+         
+            y[:, freq_idx] = scene.potential.abs()#.unsqueeze(-1)
+
+         #   if src_idx != 0 and show_scene:
+         #       scene.show()
+                
+        # 存储x，y以及几何形状  trg_points
+        
+        if split_mode == 'train':
+            torch.save({"x": x, "y": y}, f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt")
+            # 以obj格式存储几何形状
+            import trimesh
+            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh.export(f"{data_dir}/data/train_mesh/{data_name}_{src_idx}.obj")
+        else: # 测试集
+            torch.save({"x": x, "y": y}, f"{data_dir}/data/val_data/{data_name}_{src_idx}.pt")
+            # 以obj格式存储几何形状
+            import trimesh
+            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh.export(f"{data_dir}/data/val_mesh/{data_name}_{src_idx}.obj")
