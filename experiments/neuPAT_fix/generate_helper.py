@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     data_dir = sys.argv[1]
     tag = sys.argv[2]
-    gpu_id = sys.argv[3]
+    gpu_id = int(sys.argv[3])
     mode = 'train'
 
     if len(sys.argv) > 4:
@@ -28,5 +28,6 @@ if __name__ == "__main__":
     generate_sample_scene_simpler(data_dir, f"out_{tag}", 
                                   src_sample_num=src_num,
                                   show_scene=False,
-                                  split_mode=mode)
+                                  split_mode=mode,
+                                  gpu_id=gpu_id)
 

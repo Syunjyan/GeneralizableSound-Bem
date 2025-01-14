@@ -11,6 +11,8 @@ import meshio
 from tqdm import tqdm
 import warnings
 
+import trimesh
+
 warnings.filterwarnings("ignore")
 
 
@@ -346,14 +348,14 @@ class Scene:
 
         for obj in self.objs:
             if obj.name == sound_source:
-                sound_source_bbox = (obj.vertices.max(dim=0)[0] - obj.vertices.min(dim=0)[0]).max()
-            if obj.name == "obstacle.obj":
-                obstacle_bbox = (obj.vertices.max(dim=0)[0] - obj.vertices.min(dim=0)[0]).min()
+                sound_source_bbox = (obj.vertices_base.max(dim=0)[0] - obj.vertices_base.min(dim=0)[0]).max()
+            elif obj.name == "obstacle.obj":
+                obstacle_bbox = (obj.vertices_base.max(dim=0)[0] - obj.vertices_base.min(dim=0)[0]).min()
                 obstacle_bbox *= resize_vector.item()
             else:
-                raise ValueError("The scene object is not found.")
+                raise ValueError(f"The '{obj.name}' scene object is not found.")
         
-        obstacle_bbox *= 0.7 # 尽量保持声源物体bbox球 在 障碍物体内
+        obstacle_bbox *= 0.4 # 尽量保持声源物体bbox球 在 障碍物体内
         if sound_source_bbox > obstacle_bbox:
             raise ValueError("The sound source bbox is larger than the obstacle bbox.")
 
@@ -828,7 +830,9 @@ def generate_sample_scene(data_dir, data_name, src_sample_num = None, trg_sample
 
 def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, trg_sample_num = None ,
                                    show_scene:bool=False,
-                                   split_mode:str = 'train'):
+                                   split_mode:str = 'train',
+                                   gpu_id=0
+                                   ):
     '''
     一个简化版的generate_sample_scene。
     对每个场景，只生成一个样本，并存储相应的数据以及几何形状。
@@ -841,7 +845,7 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
     if trg_sample_num is None:
         trg_sample_num = scene.trg_sample_num
         
-    for src_idx in tqdm(range(src_sample_num)):
+    for src_idx in tqdm(range(src_sample_num), position=gpu_id, desc=f"gpu_{gpu_id}", leave=False):
         random_int = np.random.randint(1000000000)
         seed = random_int % 1000000000
         x = torch.zeros(
@@ -849,7 +853,8 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
                 dtype=torch.float32,
             )
         y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
-        for freq_idx in tqdm(range(65)):
+        # for freq_idx in range(65):
+        for freq_idx in tqdm(range(65), position=gpu_id, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
             scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source='ball.obj')
             scene.solve()
 
@@ -866,20 +871,19 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
         if split_mode == 'train':
             torch.save({"x": x, "y": y}, f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            import trimesh
             mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
             mesh.export(f"{data_dir}/data/train_mesh/{data_name}_{src_idx}.obj")
         else: # 测试集
             torch.save({"x": x, "y": y}, f"{data_dir}/data/val_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            import trimesh
             mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
             mesh.export(f"{data_dir}/data/val_mesh/{data_name}_{src_idx}.obj")
 
 
 def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sample_num = None , 
                              show_scene:bool=False,
-                             split_mode:str = 'train'
+                             split_mode:str = 'train',
+                             gpu_id = 0
                              ):
     '''
     同`generate_sample_scene_simpler`, 但是生成的场景是声源被半包围障碍物包围的场景。
@@ -892,7 +896,7 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
     if trg_sample_num is None:
         trg_sample_num = scene.trg_sample_num
         
-    for src_idx in tqdm(range(src_sample_num),desc=f"scene src", leave=False):
+    for src_idx in tqdm(range(src_sample_num), position=gpu_id, desc=f"gpu_{gpu_id}", leave=False):
         random_int = np.random.randint(1000000000)
         seed = random_int % 1000000000
         x = torch.zeros(
@@ -900,7 +904,8 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
                 dtype=torch.float32,
             )
         y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
-        for freq_idx in tqdm(range(65),desc="Generating frequency index {}/65".format(freq_idx),leave=False):
+        # for freq_idx in range(65):
+        for freq_idx in tqdm(range(65), position=gpu_id, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
             
             # 点声源
             scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source='ball.obj')
@@ -913,20 +918,14 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
          
             y[:, freq_idx] = scene.potential.abs()#.unsqueeze(-1)
 
-         #   if src_idx != 0 and show_scene:
-         #       scene.show()
-                
-        # 存储x，y以及几何形状  trg_points
         
         if split_mode == 'train':
-            torch.save({"x": x, "y": y}, f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt")
+            torch.save({"x": x, "y": y}, f"{data_dir}/e_data/train_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            import trimesh
             mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
-            mesh.export(f"{data_dir}/data/train_mesh/{data_name}_{src_idx}.obj")
+            mesh.export(f"{data_dir}/e_data/train_mesh/{data_name}_{src_idx}.obj")
         else: # 测试集
-            torch.save({"x": x, "y": y}, f"{data_dir}/data/val_data/{data_name}_{src_idx}.pt")
+            torch.save({"x": x, "y": y}, f"{data_dir}/e_data/val_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            import trimesh
             mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
-            mesh.export(f"{data_dir}/data/val_mesh/{data_name}_{src_idx}.obj")
+            mesh.export(f"{data_dir}/e_data/val_mesh/{data_name}_{src_idx}.obj")
