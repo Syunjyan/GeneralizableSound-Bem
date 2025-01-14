@@ -40,6 +40,7 @@ def detect_available_gpu(max_num_gpu=4, power_threshold=130):
             break
     return available_gpu
 
+os.environ["TORCH_CUDA_ARCH_LIST"]=8.6
 
 obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
 # 过滤掉非 obj 物体
