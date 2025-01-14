@@ -833,7 +833,6 @@ def generate_sample_scene(data_dir, data_name, src_sample_num = None, trg_sample
 def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, trg_sample_num = None ,
                                    show_scene:bool=False,
                                    split_mode:str = 'train',
-                                   sound_src:str = 'ball.obj',
                                    gpu_id=0
                                    ):
     '''
@@ -858,7 +857,7 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
         y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
         # for freq_idx in range(65):
         for freq_idx in tqdm(range(65), position=gpu_id, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
-            scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src)
+            scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source='ball.obj')
             scene.solve()
 
             x[:, :3] = scene.trg_points
@@ -886,7 +885,6 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
 def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sample_num = None , 
                              show_scene:bool=False,
                              split_mode:str = 'train',
-                             sound_src:str = 'ball.obj',
                              gpu_id = 0
                              ):
     '''
@@ -912,7 +910,7 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
         for freq_idx in tqdm(range(65), position=gpu_id, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
             
             # 点声源
-            scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src)
+            scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source='ball.obj')
 
             scene.solve()
 

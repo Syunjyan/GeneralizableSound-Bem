@@ -10,9 +10,9 @@ import multiprocessing
 
 import argparse
 
-parser = argparse.ArgumentParser(description="Generate data using Point soundsource.")
+parser = argparse.ArgumentParser(description="Generate data using Phone soundsource.")
 
-parser.add_argument("--data_dir", "-d", type=str, default="dataset/fix", help="Directory of the dataset, for example, dataset/fix")
+parser.add_argument("--data_dir", "-d", type=str, default="dataset/phone", help="Directory of the dataset, for example, dataset/fix")
 parser.add_argument("--type", "-t", type=str, default="obstacle", help="Generate type: obstacle or enclosed")
 parser.add_argument("--gpu_set", "-g", type=int, default=0, help="GPU set.")
 
@@ -155,7 +155,7 @@ else:
 
 
     def generate_data2(data_dir, tag, gpu_id, src_num, mode):
-        os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper2.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+        os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_phone/generate_helper2.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
 
     # 训练集
     for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train enclosed obstacles")):

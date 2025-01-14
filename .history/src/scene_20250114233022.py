@@ -912,7 +912,7 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
         for freq_idx in tqdm(range(65), position=gpu_id, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
             
             # 点声源
-            scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src)
+            scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source='ball.obj')
 
             scene.solve()
 

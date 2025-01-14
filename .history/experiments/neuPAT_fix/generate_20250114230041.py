@@ -8,19 +8,15 @@ import os, sys
 from tqdm import tqdm
 import multiprocessing
 
-import argparse
-
-parser = argparse.ArgumentParser(description="Generate data using Point soundsource.")
-
-parser.add_argument("--data_dir", "-d", type=str, default="dataset/fix", help="Directory of the dataset, for example, dataset/fix")
-parser.add_argument("--type", "-t", type=str, default="obstacle", help="Generate type: obstacle or enclosed")
-parser.add_argument("--gpu_set", "-g", type=int, default=0, help="GPU set.")
-
-args = parser.parse_args()
 
 # 2024.12.12 
 # 选取不同的障碍物，生成数据。
-data_dir = args.data_dir
+data_dir = "dataset/fix"
+# 新建文件夹
+os.makedirs(f"{data_dir}/data/train_mesh", exist_ok=True)
+os.makedirs(f"{data_dir}/data/train_data", exist_ok=True)
+os.makedirs(f"{data_dir}/e_data/train_mesh", exist_ok=True)
+os.makedirs(f"{data_dir}/e_data/train_data", exist_ok=True)
 
 def detect_available_gpu(max_num_gpu=4, power_threshold=130):
     """
@@ -47,10 +43,7 @@ obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list 
 
 # available_gpus = detect_available_gpu()
 available_gpus = [0, 1, 2, 3]
-if args.gpu_set == 0:
-    available_gpus = [0, 1, 2, 3]
-else:
-    available_gpus = [4, 5, 6, 7]
+# available_gpus = [4, 5, 6, 7]
 # 强行分配四卡
 print(f"available_gpus: {available_gpus}")
 
@@ -60,7 +53,7 @@ TRAIN_SRC_DATASIZE = 12
 
 VAL_UNIQUE_OBSTACLES = 10 # 训练集中没有的障碍物数量
 
-type = args.type
+TASK = "obstacle" # "obstacle" or "enclosed"
 
 '''
 for i, obstacles_name in enumerate(obstacles_name_list):
@@ -83,10 +76,7 @@ for i, obstacles_name in enumerate(obstacles_name_list):
 '''
 # 2025.1.14
 
-if type == "obstacle":
-
-    os.makedirs(f"{data_dir}/data/train_mesh", exist_ok=True)
-    os.makedirs(f"{data_dir}/data/train_data", exist_ok=True)
+if TASK == "obstacle":
 # 划分训练集和测试集，其中测试集包含部分训练集中没有的mesh。
 
 # 划分训练、测试集obstacles
@@ -141,9 +131,6 @@ if type == "obstacle":
 # ########################################################
 
 else: 
-    # 新建文件夹
-    os.makedirs(f"{data_dir}/e_data/train_mesh", exist_ok=True)
-    os.makedirs(f"{data_dir}/e_data/train_data", exist_ok=True)
     # 单独保存
 
     enclosed_obstacles_name_list = os.listdir(os.path.join(data_dir, "enclosed_obstacles"))

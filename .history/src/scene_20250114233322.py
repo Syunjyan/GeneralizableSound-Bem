@@ -894,6 +894,8 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
     scene的sample方式不能对障碍物进行大量的偏移，要保证声源物体的bbox在障碍物内部。
     '''
     scene = Scene(f"{data_dir}/config.json")
+    
+    print("check sound_src:", sound_src)
 
     if src_sample_num is None:
         src_sample_num = scene.src_sample_num
