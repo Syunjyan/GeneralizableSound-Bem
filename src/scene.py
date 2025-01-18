@@ -366,14 +366,14 @@ class Scene:
         for obj in self.objs:
             if obj.name == sound_source:
                 # 声源物体不会被移动或放大缩小
-                move_vector = torch.zeros(3).cuda()
+                obj.reset()
             else:
                 # 非声源物体随机移动、旋转、缩放
                 # 若不想移动，可以将 move_vector 设置为 0
                 move_vector = torch.rand(3).cuda() * (move_bounds[1] - move_bounds[0]) + move_bounds[0]
                 #move_vector = torch.zeros(3).cuda()
-            # 应用变换
-            obj.move_the_object(move_vector, rotate_vector, resize_vector)
+                # 应用变换
+                obj.move_the_object(move_vector, rotate_vector, resize_vector)
         
         # 组装场景
         self.vertices = torch.zeros(0, 3).cuda().to(torch.float32)

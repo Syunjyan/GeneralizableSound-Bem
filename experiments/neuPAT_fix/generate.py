@@ -45,6 +45,8 @@ obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
 # 过滤掉非 obj 物体
 obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
 
+os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
+
 # available_gpus = detect_available_gpu()
 available_gpus = [0, 1, 2, 3]
 if args.gpu_set == 0:
@@ -58,7 +60,7 @@ print(f"available_gpus: {available_gpus}")
 TRAIN_SRC_DATASIZE = 12
 # VAL_SRC_DATASIZE = 4
 
-VAL_UNIQUE_OBSTACLES = 10 # 训练集中没有的障碍物数量
+VAL_UNIQUE_OBSTACLES = 40 # 训练集中没有的障碍物数量
 
 type = args.type
 
@@ -87,6 +89,8 @@ if type == "obstacle":
 
     os.makedirs(f"{data_dir}/data/train_mesh", exist_ok=True)
     os.makedirs(f"{data_dir}/data/train_data", exist_ok=True)
+    os.makedirs(f"{data_dir}/data/val_mesh", exist_ok=True)
+    os.makedirs(f"{data_dir}/data/val_data", exist_ok=True)
 # 划分训练集和测试集，其中测试集包含部分训练集中没有的mesh。
 
 # 划分训练、测试集obstacles
@@ -144,6 +148,8 @@ else:
     # 新建文件夹
     os.makedirs(f"{data_dir}/e_data/train_mesh", exist_ok=True)
     os.makedirs(f"{data_dir}/e_data/train_data", exist_ok=True)
+    os.makedirs(f"{data_dir}/e_data/val_mesh", exist_ok=True)
+    os.makedirs(f"{data_dir}/e_data/val_data", exist_ok=True)
     # 单独保存
 
     enclosed_obstacles_name_list = os.listdir(os.path.join(data_dir, "enclosed_obstacles"))
@@ -156,6 +162,7 @@ else:
 
     def generate_data2(data_dir, tag, gpu_id, src_num, mode):
         os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper2.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+        # os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper_tmp.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
 
     # 训练集
     for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train enclosed obstacles")):

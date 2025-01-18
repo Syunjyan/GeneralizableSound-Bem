@@ -4,5 +4,6 @@ my_obstacles_1/*
 obstacle.obj
 data/
 e_data/
+tmp_data/
 audio_visualize.obj
 enclosed_obstacles/
