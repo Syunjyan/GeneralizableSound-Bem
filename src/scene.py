@@ -369,7 +369,7 @@ class Scene:
                 # 若不想移动，可以将 move_vector 设置为 0
                 move_vector = torch.rand(3).cuda() * (move_bounds[1] - move_bounds[0]) + move_bounds[0]
                 #move_vector = torch.zeros(3).cuda()
-            # 应用变换
+                # 应用变换
                 obj.move_the_object(move_vector, rotate_vector, resize_vector)
         
         # 组装场景
