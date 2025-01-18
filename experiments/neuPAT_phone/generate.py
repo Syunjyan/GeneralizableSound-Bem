@@ -88,6 +88,8 @@ if type == "obstacle":
 
     os.makedirs(f"{data_dir}/data/train_mesh", exist_ok=True)
     os.makedirs(f"{data_dir}/data/train_data", exist_ok=True)
+    os.makedirs(f"{data_dir}/data/val_mesh", exist_ok=True)
+    os.makedirs(f"{data_dir}/data/val_data", exist_ok=True)
 # 划分训练集和测试集，其中测试集包含部分训练集中没有的mesh。
 
 # 划分训练、测试集obstacles
@@ -145,6 +147,8 @@ else:
     # 新建文件夹
     os.makedirs(f"{data_dir}/e_data/train_mesh", exist_ok=True)
     os.makedirs(f"{data_dir}/e_data/train_data", exist_ok=True)
+    os.makedirs(f"{data_dir}/e_data/val_mesh", exist_ok=True)
+    os.makedirs(f"{data_dir}/e_data/val_data", exist_ok=True)
     # 单独保存
 
     enclosed_obstacles_name_list = os.listdir(os.path.join(data_dir, "enclosed_obstacles"))

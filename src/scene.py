@@ -332,7 +332,7 @@ class Scene:
         用于生成半包围障碍物的场景。逻辑与`my_sample`类似。
         在处理`MOVE_BOUNDS`时，要注意将声源物体的bbox保持在半包围障碍物的bbox内。(假设只有一个障碍物)
         '''
-        RESIZE_BOUNDS = [1., 2.]
+        RESIZE_BOUNDS = [2., 4.]
         move_bounds = None
 
         # 计算声源物体的bbox, 取最长边值
@@ -348,7 +348,7 @@ class Scene:
 
         for obj in self.objs:
             if obj.name == sound_source:
-                sound_source_bbox = (obj.vertices_base.max(dim=0)[0] - obj.vertices_base.min(dim=0)[0]).max()
+                sound_source_bbox = (obj.vertices_base.max(dim=0)[0] - obj.vertices_base.min(dim=0)[0])
             elif obj.name == "obstacle.obj":
                 obstacle_bbox = (obj.vertices_base.max(dim=0)[0] - obj.vertices_base.min(dim=0)[0]).min()
                 obstacle_bbox *= resize_vector.item()
@@ -356,12 +356,9 @@ class Scene:
                 raise ValueError(f"The '{obj.name}' scene object is not found.")
         
         obstacle_bbox *= 0.4 # 尽量保持声源物体bbox球 在 障碍物体内
+        d_bbox = torch.clip(-sound_source_bbox+obstacle_bbox, min=0)
 
-        move_bounds = [-obstacle_bbox + sound_source_bbox, obstacle_bbox - sound_source_bbox]
-        if sound_source_bbox > obstacle_bbox:
-            # raise ValueError("The sound source bbox is larger than the obstacle bbox.")
-            move_bounds = [0,0]
-
+        move_bounds = [-d_bbox , d_bbox]
 
         for obj in self.objs:
             if obj.name == sound_source:

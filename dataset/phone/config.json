@@ -8,11 +8,11 @@
                 0,
                 0
             ],
-            "vibration": "x"
+            "vibration": "y"
         },
         {
             "mesh": "obstacle.obj",
-            "size": 0.3,
+            "size": 0.2,
             "position": [
                 0,
                 0,
