@@ -22,7 +22,7 @@ if __name__ == "__main__":
     if mode != 'train':
         src_num = 1 # only 1 source in test and val
 
-    if os.path.exists(f"{data_dir}/data/{mode}_mesh/out_{tag}_0.obj"):
+    if os.path.exists(f"{data_dir}/e_data/{mode}_mesh/out_{tag}_0.obj"):
         print(f"data exists, gpu_id: {gpu_id} skips.")
         exit()
 

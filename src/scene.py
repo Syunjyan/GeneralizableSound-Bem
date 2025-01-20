@@ -348,10 +348,10 @@ class Scene:
         np.random.seed(int(seed * 100000) % 1000000007)
 
         rotate_vector = torch.zeros(3).cuda()
-        if not _rotate:
+        if _rotate:
             rotate_vector = torch.rand(3).cuda() * 100000
         resize_vector = torch.ones(1).cuda()
-        if not _resize:
+        if _resize:
             resize_vector = torch.rand(1).cuda() * (RESIZE_BOUNDS[1] - RESIZE_BOUNDS[0]) + RESIZE_BOUNDS[0]
 
         for obj in self.objs:
@@ -380,7 +380,7 @@ class Scene:
                 if _transition_vec is not None:
                     _transition_vec = torch.tensor(_transition_vec).cuda()
                     move_vector = _transition_vec
-                if not _transition:
+                if _transition:
                     move_vector = torch.zeros(3).cuda()
                 # 应用变换
                 obj.move_the_object(move_vector, rotate_vector, resize_vector)
@@ -926,7 +926,7 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
             
             # 点声源
             scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src,
-                                 _transition = _transition, _rotate = _rotate, _resize = _resize, _transition_vec = _transition_vec)
+                                 _transition = _transition, _rotate = _rotate, _resize = _resize)
 
             scene.solve()
 
