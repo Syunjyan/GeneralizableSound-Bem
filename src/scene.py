@@ -272,7 +272,7 @@ class Scene:
         :param sound_source: str, 声源物体的名称。该物体不会被移动或放大缩小。
         """
         RESIZE_BOUNDS = [1., 2.]
-        MOVE_BOUNDS = [-0.2, 0.2]
+        MOVE_BOUNDS = [-self.bbox_size, self.bbox_size]
         
         torch.manual_seed(seed)
         np.random.seed(int(seed * 100000) % 1000000007)
@@ -288,7 +288,7 @@ class Scene:
                 rotate_vector = torch.rand(3).cuda() * 100000
                 # 若不想移动，可以将 move_vector 设置为 0
                 move_vector = torch.rand(3).cuda() * (MOVE_BOUNDS[1] - MOVE_BOUNDS[0]) + MOVE_BOUNDS[0]
-                #move_vector = torch.zeros(3).cuda()
+                # move_vector = torch.zeros(3).cuda()
                 resize_vector = torch.rand(1).cuda() * (RESIZE_BOUNDS[1] - RESIZE_BOUNDS[0]) + RESIZE_BOUNDS[0]
             # 应用变换
             obj.move_the_object(move_vector, rotate_vector, resize_vector)
@@ -327,12 +327,16 @@ class Scene:
                     seed: int=0,
                     freq_idx: int=0,
                     max_freq_idx: int=50,
+                    _transition = True,
+                    _rotate = True,
+                    _resize = True,
+                    _transition_vec = None
                     ):
         '''
         用于生成半包围障碍物的场景。逻辑与`my_sample`类似。
         在处理`MOVE_BOUNDS`时，要注意将声源物体的bbox保持在半包围障碍物的bbox内。(假设只有一个障碍物)
         '''
-        RESIZE_BOUNDS = [2., 4.]
+        RESIZE_BOUNDS = [1., 2.]
         move_bounds = None
 
         # 计算声源物体的bbox, 取最长边值
@@ -343,8 +347,12 @@ class Scene:
         torch.manual_seed(seed)
         np.random.seed(int(seed * 100000) % 1000000007)
 
-        rotate_vector = torch.rand(3).cuda() * 100000
-        resize_vector = torch.rand(1).cuda() * (RESIZE_BOUNDS[1] - RESIZE_BOUNDS[0]) + RESIZE_BOUNDS[0]
+        rotate_vector = torch.zeros(3).cuda()
+        if not _rotate:
+            rotate_vector = torch.rand(3).cuda() * 100000
+        resize_vector = torch.ones(1).cuda()
+        if not _resize:
+            resize_vector = torch.rand(1).cuda() * (RESIZE_BOUNDS[1] - RESIZE_BOUNDS[0]) + RESIZE_BOUNDS[0]
 
         for obj in self.objs:
             if obj.name == sound_source:
@@ -355,8 +363,8 @@ class Scene:
             else:
                 raise ValueError(f"The '{obj.name}' scene object is not found.")
         
-        obstacle_bbox *= 0.4 # 尽量保持声源物体bbox球 在 障碍物体内
-        d_bbox = torch.clip(-sound_source_bbox+obstacle_bbox, min=0)
+        obstacle_bbox *= 0.6 # 尽量保持声源物体bbox球 在 障碍物体内
+        d_bbox = torch.clip(-sound_source_bbox+obstacle_bbox, min=0)/2
 
         move_bounds = [-d_bbox , d_bbox]
 
@@ -368,7 +376,12 @@ class Scene:
                 # 非声源物体随机移动、旋转、缩放
                 # 若不想移动，可以将 move_vector 设置为 0
                 move_vector = torch.rand(3).cuda() * (move_bounds[1] - move_bounds[0]) + move_bounds[0]
-                #move_vector = torch.zeros(3).cuda()
+                move_vector[[0,2]]=0 # for demo finetune
+                if _transition_vec is not None:
+                    _transition_vec = torch.tensor(_transition_vec).cuda()
+                    move_vector = _transition_vec
+                if not _transition:
+                    move_vector = torch.zeros(3).cuda()
                 # 应用变换
                 obj.move_the_object(move_vector, rotate_vector, resize_vector)
         
@@ -884,7 +897,10 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
                              show_scene:bool=False,
                              split_mode:str = 'train',
                              sound_src:str = 'ball.obj',
-                             gpu_id = 0
+                             gpu_id = 0,
+                            _transition = True,
+                            _rotate = True,
+                            _resize = True
                              ):
     '''
     同`generate_sample_scene_simpler`, 但是生成的场景是声源被半包围障碍物包围的场景。
@@ -909,7 +925,8 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
         for freq_idx in tqdm(range(65), position=gpu_id, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
             
             # 点声源
-            scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src)
+            scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src,
+                                 _transition = _transition, _rotate = _rotate, _resize = _resize, _transition_vec = _transition_vec)
 
             scene.solve()
 

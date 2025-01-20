@@ -1,0 +1,11 @@
+my_obstacles/
+my_obstacles/*
+my_obstacles_1/*
+
+data
+e_data
+audio_visualize.obj
+enclosed_obstacles/
+*.wav
+mesh/
+*.obj
