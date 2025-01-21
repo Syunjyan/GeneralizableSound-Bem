@@ -87,13 +87,14 @@ def normalize_vertices(vertices, scale=1.0):
 
 
 class StaticObj:
-    def __init__(self, mesh_path, scale=0.15):
+    def __init__(self, mesh_path, scale=0.15, normalize=True):
         mesh = meshio.read(mesh_path)
         self.vertices = mesh.points
         # bbox_min = self.vertices.min(axis=0)
         # bbox_max = self.vertices.max(axis=0)
         # print(mesh_path, "size:", (bbox_max - bbox_min).max())  # debug
-        self.vertices = normalize_vertices(self.vertices, scale)
+        if normalize:
+            self.vertices = normalize_vertices(self.vertices, scale)
         self.triangles = mesh.cells_dict["triangle"]
         self.bbox_min = self.vertices.min(axis=0)
         self.bbox_max = self.vertices.max(axis=0)

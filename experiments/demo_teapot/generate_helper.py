@@ -22,9 +22,7 @@ if __name__ == "__main__":
     if mode != 'train':
         src_num = 1 # only 1 source in test and val
 
-    if os.path.exists(f"{data_dir}/e_data/{mode}_mesh/out_{tag}_0.obj"):
-        print(f"data exists, gpu_id: {gpu_id} skips.")
-        exit()
+    skip = True
 
     #os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
     # print(f"started a process. gpu_id: {gpu_id}")
@@ -35,7 +33,7 @@ if __name__ == "__main__":
                                   sound_src="phone.obj",
                                   split_mode=mode,
                                   gpu_id=gpu_id,
-                                  _rotate=False,
-                                  _resize=False
+                                  skip=skip,
+                                  _rotate=False
                                   )
 

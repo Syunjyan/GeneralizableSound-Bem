@@ -118,9 +118,11 @@ class ObjAnim:
 
 
 class Obj:
-    def __init__(self, obj_json, data_dir):
-        obj = StaticObj(os.path.join(data_dir, obj_json["mesh"]), obj_json["size"])
+    def __init__(self, obj_json, data_dir, normalize=True):
         self.name = obj_json["mesh"]
+        if self.name == "phone.obj":
+            normalize = True
+        obj = StaticObj(os.path.join(data_dir, obj_json["mesh"]), obj_json["size"], normalize)
         self.vertices_base = torch.tensor(obj.vertices).cuda().to(torch.float32)
         self.triangles = torch.tensor(obj.triangles).cuda().to(torch.int32)
         self.resize_base = (
@@ -219,7 +221,7 @@ class Obj:
 
 
 class Scene:
-    def __init__(self, json_path):
+    def __init__(self, json_path, normalize=True):
         with open(json_path, "r") as file:
             data = json.load(file)
         self.objs = []
@@ -236,7 +238,7 @@ class Scene:
                     obj = ObjAnim(obj_json, self.data_dir)
                 self.obj_list_num += 1
             else:
-                obj = Obj(obj_json, self.data_dir)
+                obj = Obj(obj_json, self.data_dir, normalize)
                 if obj.rot_axis is not None:
                     self.rot_num += 1
                 if obj.move_vec is not None:
@@ -376,11 +378,13 @@ class Scene:
                 # 非声源物体随机移动、旋转、缩放
                 # 若不想移动，可以将 move_vector 设置为 0
                 move_vector = torch.rand(3).cuda() * (move_bounds[1] - move_bounds[0]) + move_bounds[0]
-                move_vector[[0,2]]=0 # for demo finetune
+                move_vector[0] = 0 # for demo finetune
+                move_vector[2] = 0
+                # print("check:", move_bounds, move_vector)
                 if _transition_vec is not None:
                     _transition_vec = torch.tensor(_transition_vec).cuda()
                     move_vector = _transition_vec
-                if _transition:
+                if not _transition:
                     move_vector = torch.zeros(3).cuda()
                 # 应用变换
                 obj.move_the_object(move_vector, rotate_vector, resize_vector)
@@ -563,8 +567,8 @@ class Scene:
             self.trg_factor = man_trg_factor
             # self.trg_sample_num = man_trg_factor.shape[0]
         
-        # rs = (sample_points_base[:, 0] + 1) * self.bbox_size
-        rs = (self.trg_factor[:, 0]) * self.bbox_size * 2 # (0,2) times the bounding box size
+        rs = (sample_points_base[:, 0] + 1) * self.bbox_size
+        # rs = (self.trg_factor[:, 0]) * self.bbox_size * 2 # (0,2) times the bounding box size，4*a
         theta = self.trg_factor[:, 1] * np.pi # (0, pi)
         phi = self.trg_factor[:, 2] * 2 * np.pi - np.pi # (-pi, pi)
         xs = rs * torch.sin(theta) * torch.cos(phi)
@@ -858,7 +862,7 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
     if trg_sample_num is None:
         trg_sample_num = scene.trg_sample_num
         
-    for src_idx in tqdm(range(src_sample_num), position=gpu_id, desc=f"gpu_{gpu_id}", leave=False):
+    for src_idx in tqdm(range(src_sample_num), position=gpu_id+1, desc=f"gpu_{gpu_id}", leave=False):
         random_int = np.random.randint(1000000000)
         seed = random_int % 1000000000
         x = torch.zeros(
@@ -867,7 +871,7 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
             )
         y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
         # for freq_idx in range(65):
-        for freq_idx in tqdm(range(65), position=gpu_id, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
+        for freq_idx in tqdm(range(65), position=gpu_id+1, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
             scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src)
             scene.solve()
 
@@ -898,6 +902,7 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
                              split_mode:str = 'train',
                              sound_src:str = 'ball.obj',
                              gpu_id = 0,
+                             skip = False,
                             _transition = True,
                             _rotate = True,
                             _resize = True
@@ -913,16 +918,22 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
     if trg_sample_num is None:
         trg_sample_num = scene.trg_sample_num
         
-    for src_idx in tqdm(range(src_sample_num), position=gpu_id, desc=f"gpu_{gpu_id}", leave=False):
+    for src_idx in tqdm(range(src_sample_num), position=gpu_id+1, desc=f"gpu_{gpu_id}", leave=False):
         random_int = np.random.randint(1000000000)
         seed = random_int % 1000000000
+        if skip:
+            if os.path.exists(f"{data_dir}/e_data/{split_mode}_mesh/{data_name}_{src_idx}.obj"):
+                # print(f"data exists, gpu_id: {gpu_id} skips.")
+                continue
+
         x = torch.zeros(
                 trg_sample_num, 3,
                 dtype=torch.float32,
             )
         y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
+
         # for freq_idx in range(65):
-        for freq_idx in tqdm(range(65), position=gpu_id, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
+        for freq_idx in tqdm(range(65), position=gpu_id+1, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
             
             # 点声源
             scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src,

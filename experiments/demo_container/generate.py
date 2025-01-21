@@ -48,17 +48,12 @@ obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list 
 
 os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
-# available_gpus = detect_available_gpu()
-available_gpus = [0, 1, 2, 3]
-if args.gpu_set == 0:
-    available_gpus = [0, 1, 2, 3]
-else:
-    available_gpus = [4, 5, 6, 7]
-
-print(f"available_gpus: {available_gpus}")
+available_gpus = detect_available_gpu(1)
+# 由于柜子demo特殊性，单卡生成即可
 
 
-TRAIN_SRC_DATASIZE = 12
+
+TRAIN_SRC_DATASIZE = 1
 # VAL_SRC_DATASIZE = 4
 
 VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量
