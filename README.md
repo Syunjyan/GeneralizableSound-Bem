@@ -5,14 +5,6 @@
 - CUDA (match with the version of PyTorch, which is required by Pytorch CUDA Extension in `src/cuda`):
 - Pytorch
 - tensorboard
-- tiny-cuda-nn
-
-```bash
-# if using your own network, you can ignore this
-git clone --recursive https://github.com/nvlabs/tiny-cuda-nn
-cd tiny-cuda-nn/bindings/torch
-python setup.py install
-```
 
 Other dependencies:
 
@@ -23,8 +15,6 @@ pip install plotly scikit-image ninja librosa seaborn
 
 
 ## Usage
-
-// TODO: adjust the experement code
 
 To use the code, follow these steps:
 
@@ -37,12 +27,17 @@ To use the code, follow these steps:
 
 2. Install the required dependencies as mentioned in the Dependencies section.
 
-3. generate the sound data for training
+3. generate the sound data for point sound source: 
 
     ```bash
     python experiments/neuPAT_fix/generate.py
     ```
 
+4. generate the sound data for phone sound source: 
+
+    ```bash
+    python experiments/neuPAT_phone/generate.py
+    ```
 
 ## Directory Structure
 
