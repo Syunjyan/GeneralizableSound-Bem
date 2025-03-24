@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("./")
 
-from src.scene import Scene
+from src.scene import Scene, generate_sample_enclosed
 import torch
 import os, sys
 from tqdm import tqdm
@@ -97,3 +97,14 @@ if __name__ == "__main__":
                     gpu_id=gpu_id
                     )
 
+    # generate_sample_enclosed(data_dir, f"out_{tag}",
+    #                                 src_sample_num=src_num,
+    #                                 show_scene=False,
+    #                                 sound_src="phone.obj",
+    #                                 split_mode=mode,
+    #                                 gpu_id=gpu_id,
+    #                                 skip=skip,
+    #                                 _rotate=False,
+    #                                 _transition=False,
+    #                                 _resize=True
+    #                                 )

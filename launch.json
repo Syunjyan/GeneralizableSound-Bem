@@ -1,0 +1,33 @@
+{
+  "configurations": [
+    {
+      "type": "python",
+      "request": "launch",
+      "name": "teapot generate",
+      "program": "${workspaceFolder}/experiments/demo_teapot/generate_helper.py",
+      "args": ["dataset/teapot", "0_0", "0", "16", "train"],
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0",
+        "PATH": "/usr/local/cuda-12.2/bin:${env:PATH}"
+      }
+    },
+    {
+      "type": "python",
+      "request": "launch",
+      "name": "cup generate",
+      "program": "${workspaceFolder}/experiments/demo_cup/generate_helper2.py",
+      "args": ["dataset/cup", "0_0", "0", "12", "train"],
+      "env": {
+        "CUDA_VISIBLE_DEVICES": "0",
+        "PATH": "/usr/local/cuda-12.2/bin:${env:PATH}"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "programPath",
+      "description": "Enter the path to the Python file you want to debug"
+    }
+  ]
+}

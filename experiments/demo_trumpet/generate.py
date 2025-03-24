@@ -1,4 +1,4 @@
-# 生成teapot场景数据，生成半包围形式训练数据
+# 生成柜子场景数据
 import sys
 
 sys.path.append("./")
@@ -13,7 +13,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Generate data using Point soundsource.")
 
-parser.add_argument("--data_dir", "-d", type=str, default="dataset/teapot", help="Directory of the dataset, for example, dataset/fix")
+parser.add_argument("--data_dir", "-d", type=str, default="dataset/trumpet", help="Directory of the dataset, for example, dataset/fix")
 # parser.add_argument("--type", "-t", type=str, default="obstacle", help="Generate type: obstacle or enclosed")
 parser.add_argument("--gpu_set", "-g", type=int, default=0, help="GPU set.")
 
@@ -48,17 +48,12 @@ obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list 
 
 os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
-# available_gpus = detect_available_gpu()
-available_gpus = [0]
-# if args.gpu_set == 0:
-#     available_gpus = [0, 1, 2, 3]
-# else:
-#     available_gpus = [4, 5, 6, 7]
-
-print(f"available_gpus: {available_gpus}")
+available_gpus = detect_available_gpu(1)
+# 由于柜子demo特殊性，单卡生成即可
 
 
-TRAIN_SRC_DATASIZE = 16
+
+TRAIN_SRC_DATASIZE = 1
 # VAL_SRC_DATASIZE = 4
 
 VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量
@@ -68,10 +63,10 @@ VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量
 # 2025.1.14
 
 
-os.makedirs(f"{data_dir}/e_data/train_mesh", exist_ok=True)
-os.makedirs(f"{data_dir}/e_data/train_data", exist_ok=True)
-os.makedirs(f"{data_dir}/e_data/val_mesh", exist_ok=True)
-os.makedirs(f"{data_dir}/e_data/val_data", exist_ok=True)
+os.makedirs(f"{data_dir}/data/train_mesh", exist_ok=True)
+os.makedirs(f"{data_dir}/data/train_data", exist_ok=True)
+os.makedirs(f"{data_dir}/data/val_mesh", exist_ok=True)
+os.makedirs(f"{data_dir}/data/val_data", exist_ok=True)
 # 划分训练集和测试集，其中测试集包含部分训练集中没有的mesh。
 
 # 划分训练、测试集obstacles
@@ -84,8 +79,7 @@ val_obstacles = obstacles_name_list
 
 # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
 def generate_data(data_dir, tag, gpu_id, src_num, mode):
-    print("check command: ", f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_teapot/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
-    os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_teapot/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+    os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_trumpet/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
 
 for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train obstacles")):
     

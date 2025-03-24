@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("./")
 
-from src.scene import Scene
+from src.scene import Scene, generate_sample_enclosed
 import torch
 import os, sys
 from tqdm import tqdm
@@ -11,18 +11,18 @@ from tqdm import tqdm
 import numpy as np
 import trimesh
 
-# 自定义sample过程，做指定方向的旋转，不做放缩，不做平移
+# 自定义sample过程，不做旋转，不做放缩，不做平移,
 def custom(data_dir, data_name, src_sample_num = None, trg_sample_num = None , 
                              show_scene:bool=False,
                              split_mode:str = 'train',
-                             sound_src:str = 'phone.obj',
+                             sound_src:str = 'ball.obj',
                              gpu_id = 0
                              ):
     
     # 想办法避开Scene对container的正则化
     scene = Scene(f"{data_dir}/config.json", normalize=False)
 
-    skip = True
+    skip = False
 
     if src_sample_num is None:
         src_sample_num = scene.src_sample_num
@@ -46,7 +46,9 @@ def custom(data_dir, data_name, src_sample_num = None, trg_sample_num = None ,
         for freq_idx in tqdm(range(65), position=gpu_id+1, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
             
             scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src,
-                                _transition=False, _resize=False, _rotate = True)
+                                  _transition = False,
+                                  _rotate = False,
+                                  _resize = False)
 
             scene.solve()
 
@@ -93,6 +95,7 @@ if __name__ == "__main__":
                                   src_sample_num=src_num,
                                   show_scene=False,
                                   split_mode=mode,
-                                  sound_src="phone.obj",
-                                  gpu_id=gpu_id)
+                                  sound_src="ball.obj",
+                                  gpu_id=gpu_id
+                                  )
 

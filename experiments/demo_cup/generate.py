@@ -3,7 +3,7 @@ import sys
 
 sys.path.append("./")
 
-from src.scene import Scene, generate_sample_scene_simpler
+# from src.scene import Scene, generate_sample_scene_simpler
 import torch
 import os, sys
 from tqdm import tqdm

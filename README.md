@@ -39,6 +39,12 @@ To use the code, follow these steps:
     python experiments/neuPAT_phone/generate.py
     ```
 
+5. generate the data for sound to train the demo:
+
+    ```bash
+    python experiments/demo_xxx/generate.py
+    ```
+
 ## Directory Structure
 
 `src` contains the source code for the MC-Bem. 
@@ -67,7 +73,7 @@ dataset
 
 
 
-## How to Create a Scene and Use the MC-Bem
+## How to Create a Scene and Use the MC-Bem （new）
 
 If you need to create a new scene and use the MC-Bem, you can utilize the tools provided in `src/scene.py`, create the `dataset/xxx` directory, add mesh file and modify the `config.json` file in that directory as described below.
 

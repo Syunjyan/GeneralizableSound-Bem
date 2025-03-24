@@ -48,12 +48,12 @@ obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list 
 
 os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
-available_gpus = detect_available_gpu(1)
+available_gpus = detect_available_gpu(6)
 # 由于柜子demo特殊性，单卡生成即可
 
 
 
-TRAIN_SRC_DATASIZE = 1
+TRAIN_SRC_DATASIZE = 12
 # VAL_SRC_DATASIZE = 4
 
 VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量

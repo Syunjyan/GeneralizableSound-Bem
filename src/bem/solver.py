@@ -66,7 +66,7 @@ def solve_linear_equation(A_func, b, x=None, nsteps=500, tol=1e-10, atol=1e-16):
     return solver.solve(b, x=x, nsteps=nsteps, tol=tol, atol=atol)
 
 
-class BEM_Solver:
+class MCBEM_Solver:
     def __init__(self, vertices, triangles):
         if isinstance(vertices, np.ndarray):
             vertices = torch.from_numpy(vertices).cuda().float()
@@ -136,6 +136,11 @@ class BEM_Solver:
             cuda_imp.double_boundary_potential(self.vertices, self.triangles, points, k)
             @ dirichlet
         )
+
+    def double_temp(self, k, points):
+        return cuda_imp.double_boundary_potential(
+            self.vertices, self.triangles, points, k)
+            
 
     def boundary2potential(self, k, neumann, dirichlet, points):
         slp = cuda_imp.single_boundary_potential(

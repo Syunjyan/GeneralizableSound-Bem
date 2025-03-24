@@ -2,7 +2,7 @@
     "obj": [
         {
             "mesh": "ball.obj",
-            "size":  0.02,
+            "size":  0.03,
             "position": [
                 0,
                 0,
@@ -12,7 +12,7 @@
         },
         {
             "mesh": "obstacle.obj",
-            "size": 0.28,
+            "size": 0.6,
             "position": [
                 0,
                 0,

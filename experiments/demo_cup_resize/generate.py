@@ -1,9 +1,9 @@
-# 生成teapot场景数据，生成半包围形式训练数据
+# 生成cup-phone场景数据，以finetune
 import sys
 
 sys.path.append("./")
 
-from src.scene import Scene, generate_sample_scene_simpler
+# from src.scene import Scene, generate_sample_scene_simpler
 import torch
 import os, sys
 from tqdm import tqdm
@@ -13,7 +13,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Generate data using Point soundsource.")
 
-parser.add_argument("--data_dir", "-d", type=str, default="dataset/teapot", help="Directory of the dataset, for example, dataset/fix")
+parser.add_argument("--data_dir", "-d", type=str, default="dataset/cup", help="Directory of the dataset, for example, dataset/fix")
 # parser.add_argument("--type", "-t", type=str, default="obstacle", help="Generate type: obstacle or enclosed")
 parser.add_argument("--gpu_set", "-g", type=int, default=0, help="GPU set.")
 
@@ -49,16 +49,17 @@ obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list 
 os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
 # available_gpus = detect_available_gpu()
-available_gpus = [0]
+# available_gpus = [0, 1, 2, 3]
 # if args.gpu_set == 0:
 #     available_gpus = [0, 1, 2, 3]
 # else:
 #     available_gpus = [4, 5, 6, 7]
+available_gpus = [0,1,2,3] # 5卡，别烧，please
 
 print(f"available_gpus: {available_gpus}")
 
 
-TRAIN_SRC_DATASIZE = 16
+TRAIN_SRC_DATASIZE = 20
 # VAL_SRC_DATASIZE = 4
 
 VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量
@@ -84,8 +85,7 @@ val_obstacles = obstacles_name_list
 
 # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
 def generate_data(data_dir, tag, gpu_id, src_num, mode):
-    print("check command: ", f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_teapot/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
-    os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_teapot/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+    os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_cup/generate_helper2.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
 
 for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train obstacles")):
     

@@ -4,7 +4,8 @@ from scipy.spatial.transform import Rotation as R
 import torch
 from .utils import Visualizer
 import os
-from src.bem.solver import BEM_Solver
+from src.bem.vallinaBem import BEM_Solver
+# from src.bem.solver import MCBEM_Solver
 import numpy as np
 from glob import glob
 import meshio
@@ -120,7 +121,7 @@ class ObjAnim:
 class Obj:
     def __init__(self, obj_json, data_dir, normalize=True):
         self.name = obj_json["mesh"]
-        if self.name == "phone.obj":
+        if self.name == "ball.obj":
             normalize = True
         obj = StaticObj(os.path.join(data_dir, obj_json["mesh"]), obj_json["size"], normalize)
         self.vertices_base = torch.tensor(obj.vertices).cuda().to(torch.float32)
@@ -332,7 +333,8 @@ class Scene:
                     _transition = True,
                     _rotate = True,
                     _resize = True,
-                    _transition_vec = None
+                    _transition_vec = None,
+                    _rotation_vec = None
                     ):
         '''
         用于生成半包围障碍物的场景。逻辑与`my_sample`类似。
@@ -352,6 +354,12 @@ class Scene:
         rotate_vector = torch.zeros(3).cuda()
         if _rotate:
             rotate_vector = torch.rand(3).cuda() * 100000
+            if _rotation_vec is not None:
+                rotate_vector = _rotation_vec
+        # for container
+        rotate_vector[0]=0
+        rotate_vector[1]=0
+        
         resize_vector = torch.ones(1).cuda()
         if _resize:
             resize_vector = torch.rand(1).cuda() * (RESIZE_BOUNDS[1] - RESIZE_BOUNDS[0]) + RESIZE_BOUNDS[0]
@@ -556,6 +564,8 @@ class Scene:
         `self.potential`: a tensor of shape `(len(self.trg_points), 1)`, which is the potential of the scene at the target points.
         '''
         solver = BEM_Solver(self.vertices, self.triangles)
+        # mcsolver = MCBEM_Solver(self.vertices, self.triangles)
+        # mc_dirichlet = mcsolver.neumann2dirichlet(self.k, self.neumann)
         self.dirichlet = solver.neumann2dirichlet(self.k, self.neumann)
 
         if man_trg_factor is None:
@@ -579,9 +589,15 @@ class Scene:
         self.zs = zs
         self.trg_points = torch.stack([xs, ys, zs], dim=-1) + self.bbox_center
 
+        # mc_potential = mcsolver.boundary2potential(
+        #     self.k, self.neumann, mc_dirichlet, self.trg_points
+        # ).cpu()
         self.potential = solver.boundary2potential(
             self.k, self.neumann, self.dirichlet, self.trg_points
         ).cpu()
+        # rerr = torch.norm(self.potential - mc_potential) / torch.norm(mc_potential)
+        # if rerr > 1e-3:
+        #     print("Warning: BEM and MC BEM potential difference is large:", rerr)
 
     def show(self, logged_values=False):
         # logged_values: bool, if True, the values will take a log transformation
