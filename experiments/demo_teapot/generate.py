@@ -50,16 +50,16 @@ os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
 # available_gpus = detect_available_gpu()
 available_gpus = [0]
-# if args.gpu_set == 0:
-#     available_gpus = [0, 1, 2, 3]
-# else:
-#     available_gpus = [4, 5, 6, 7]
+if args.gpu_set == 0:
+    available_gpus = [0, 1, 2, 3]
+else:
+    available_gpus = [4, 5, 6, 7]
 
 print(f"available_gpus: {available_gpus}")
 
 
-TRAIN_SRC_DATASIZE = 16
-# VAL_SRC_DATASIZE = 4
+TRAIN_SRC_DATASIZE = 12
+VAL_SRC_DATASIZE = 4
 
 VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量
 

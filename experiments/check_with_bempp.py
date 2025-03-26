@@ -8,8 +8,8 @@ Edit by Houxinyun
 import sys
 
 sys.path.append("./")
-from src.bem.solver import MCBEM_Solver
-from src.bem.vallinaBem import BEM_Solver
+from src.bem.solver import BEM_Solver
+from src.bem.vallinaBem import BEM
 import bempp.api
 import torch
 import numpy as np
@@ -35,8 +35,8 @@ check_points = torch.tensor(
     ]
 )
 check_points = check_points.float().cuda()
-vallina_bem = BEM_Solver(vertices, triangles)
-cuda_bem = MCBEM_Solver(vertices, triangles)
+vallina_bem = BEM(vertices, triangles)
+cuda_bem = BEM_Solver(vertices, triangles)
 
 identity_matrix_bempp = vallina_bem.identity_matrix()
 identity_matrix_cuda = cuda_bem.identity_matrix()

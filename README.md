@@ -5,12 +5,19 @@
 - CUDA (match with the version of PyTorch, which is required by Pytorch CUDA Extension in `src/cuda`):
 - Pytorch
 - tensorboard
+- bempp:
+
+```bash
+pip install pyopencl
+pip install bempp-cl==0.3.2
+```
 
 Other dependencies:
 
 ```bash
 pip install numpy scipy numba meshio matplotlib tqdm commentjson protobuf ipywidgets IPython
 pip install plotly scikit-image ninja librosa seaborn
+pip install trimesh
 ```
 
 

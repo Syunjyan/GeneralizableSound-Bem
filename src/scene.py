@@ -4,8 +4,8 @@ from scipy.spatial.transform import Rotation as R
 import torch
 from .utils import Visualizer
 import os
-from src.bem.vallinaBem import BEM_Solver
-# from src.bem.solver import MCBEM_Solver
+# from src.bem.vallinaBem import BEM_Solver
+from src.bem.solver import BEM_Solver
 import numpy as np
 from glob import glob
 import meshio

@@ -9,7 +9,11 @@ import bempp.api
 
 bempp.api.BOUNDARY_OPERATOR_DEVICE_TYPE = "gpu"
 bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE = "gpu"
-bempp.api.PLOT_BACKEND = "gmsh"
+bempp.api.PLOT_BACKEND = "paraview"
+
+# from bempp.core import opencl_kernels
+# opencl_kernels.device_type='gpu'
+# bempp.api.BOUNDARY_OPERATOR_DEVICE_TYPE = "gpu"
 
 
 def check_tensor(tensor, dtype):
@@ -47,7 +51,7 @@ def solve_linear_equation(A_func, b, x=None, nsteps=500, tol=1e-10, atol=1e-16):
     return solver.solve(b, x=x, nsteps=nsteps, tol=tol, atol=atol)
 
 
-class BEM_Solver:
+class BEM:
     def __init__(self, vertices, triangles):
         if isinstance(vertices, np.ndarray):
             vertices = torch.from_numpy(vertices).cuda().float()
@@ -77,8 +81,9 @@ class BEM_Solver:
                 device_interface="opencl",
                 precision="single",
             )
+            hyp = hyp.weak_form().A
 
-            hyp_matrix_bempp = torch.from_numpy(hyp.weak_form().A).cuda()
+            hyp_matrix_bempp = torch.from_numpy(hyp).cuda()
             double_matrix_bempp = bempp.api.operators.boundary.helmholtz.double_layer(
                 space, space, space, wavenumber
             )
