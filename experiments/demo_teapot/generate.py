@@ -1,11 +1,12 @@
 # 生成teapot场景数据，生成半包围形式训练数据
-import sys
+
+import os, sys
 
 sys.path.append("./")
+os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
 from src.scene import Scene, generate_sample_scene_simpler
 import torch
-import os, sys
 from tqdm import tqdm
 import multiprocessing
 
@@ -46,19 +47,18 @@ obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
 # 过滤掉非 obj 物体
 obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
 
-os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
-# available_gpus = detect_available_gpu()
-available_gpus = [0]
-if args.gpu_set == 0:
-    available_gpus = [0, 1, 2, 3]
-else:
-    available_gpus = [4, 5, 6, 7]
+available_gpus = detect_available_gpu(4)
+# available_gpus = [0]
+# if args.gpu_set == 0:
+#     available_gpus = [0, 1, 2, 3]
+# else:
+#     available_gpus = [4, 5, 6, 7]
 
 print(f"available_gpus: {available_gpus}")
 
 
-TRAIN_SRC_DATASIZE = 12
+TRAIN_SRC_DATASIZE = 24
 VAL_SRC_DATASIZE = 4
 
 VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量
@@ -84,7 +84,6 @@ val_obstacles = obstacles_name_list
 
 # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
 def generate_data(data_dir, tag, gpu_id, src_num, mode):
-    print("check command: ", f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_teapot/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
     os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_teapot/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
 
 for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train obstacles")):

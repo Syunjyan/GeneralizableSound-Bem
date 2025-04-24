@@ -1,3 +1,4 @@
+# 用于旧版的音频生成，已经弃用
 import sys
 sys.path.append("./")
 
@@ -163,22 +164,6 @@ def generate_sound_static(data_dir, audio_name, n_fft=128, sampling_rate=16000,
 
     wavfile.write(f"{data_dir}/{audio_name}", sampling_rate, audio)
 
-<<<<<<< HEAD
-=======
-    # 可视化obj
-    # import trimesh
-    # ball_mesh = trimesh.load_mesh(data_dir+'/ball.obj', process=False)
-    # ball_mesh.apply_scale(0.02)
-
-    # ori_mesh = trimesh.load_mesh(data_dir+'/obstacle.obj', process=False)
-    # ori_mesh = ori_mesh + ball_mesh
-    # ori_mesh.export(data_dir+f"/audio_visualize.obj")
-
-# Example usage:
-# generate_sound_stable("dataset/fix", "audio_1.wav")
-
-
->>>>>>> point_sound_src
 
 def generate_sound_dynamic():
     # TODO

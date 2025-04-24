@@ -339,6 +339,7 @@ class Scene:
         '''
         用于生成半包围障碍物的场景。逻辑与`my_sample`类似。
         在处理`MOVE_BOUNDS`时，要注意将声源物体的bbox保持在半包围障碍物的bbox内。(假设只有一个障碍物)
+        非teapot demo需修正代码。
         '''
         RESIZE_BOUNDS = [1., 2.]
         move_bounds = None
@@ -368,12 +369,12 @@ class Scene:
             if obj.name == sound_source:
                 sound_source_bbox = (obj.vertices_base.max(dim=0)[0] - obj.vertices_base.min(dim=0)[0])
             elif obj.name == "obstacle.obj":
-                obstacle_bbox = (obj.vertices_base.max(dim=0)[0] - obj.vertices_base.min(dim=0)[0]).min()
+                obstacle_bbox = (obj.vertices_base.max(dim=0)[0] - obj.vertices_base.min(dim=0)[0])[1]
                 obstacle_bbox *= resize_vector.item()
             else:
                 raise ValueError(f"The '{obj.name}' scene object is not found.")
         
-        obstacle_bbox *= 0.6 # 尽量保持声源物体bbox球 在 障碍物体内
+        obstacle_bbox *= 0.7 # 尽量保持声源物体bbox球 在 障碍物体内
         d_bbox = torch.clip(-sound_source_bbox+obstacle_bbox, min=0)/2
 
         move_bounds = [-d_bbox , d_bbox]
@@ -386,7 +387,7 @@ class Scene:
                 # 非声源物体随机移动、旋转、缩放
                 # 若不想移动，可以将 move_vector 设置为 0
                 move_vector = torch.rand(3).cuda() * (move_bounds[1] - move_bounds[0]) + move_bounds[0]
-                move_vector[0] = 0 # for demo finetune
+                move_vector[0] = 0 # for teapot demo
                 move_vector[2] = 0
                 # print("check:", move_bounds, move_vector)
                 if _transition_vec is not None:

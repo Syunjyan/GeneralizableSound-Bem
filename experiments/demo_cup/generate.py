@@ -48,13 +48,13 @@ obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list 
 
 os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
-# available_gpus = detect_available_gpu()
+available_gpus = detect_available_gpu()
 # available_gpus = [0, 1, 2, 3]
 # if args.gpu_set == 0:
 #     available_gpus = [0, 1, 2, 3]
 # else:
 #     available_gpus = [4, 5, 6, 7]
-available_gpus = [0,1,2,3,4] # 5卡，别烧，please
+# available_gpus = [0,1,2,3] # 5卡，别烧，please
 
 print(f"available_gpus: {available_gpus}")
 

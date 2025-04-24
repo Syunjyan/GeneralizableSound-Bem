@@ -14,7 +14,7 @@ import numpy as np
 def custom(data_dir, data_name, src_sample_num = None, trg_sample_num = None , 
                              show_scene:bool=False,
                              split_mode:str = 'train',
-                             sound_src:str = 'phone.obj',
+                             sound_src:str = 'ball.obj',
                              gpu_id = 0
                              ):
     
@@ -45,7 +45,7 @@ def custom(data_dir, data_name, src_sample_num = None, trg_sample_num = None ,
         for freq_idx in tqdm(range(65), position=gpu_id+1, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
             
             # 固定向量，将container移动到[0, 0, -0.8]
-            _transition_vec = np.array([0, 0, -0.8])
+            # _transition_vec = np.array([0, 0, -0.8])
             # 
             
             scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src,
@@ -59,15 +59,15 @@ def custom(data_dir, data_name, src_sample_num = None, trg_sample_num = None ,
 
         
         if split_mode == 'train':
-            torch.save({"x": x, "y": y}, f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt")
+            torch.save({"x": x, "y": y}, f"{data_dir}/e_data/train_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
             mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
-            mesh.export(f"{data_dir}/data/train_mesh/{data_name}_{src_idx}.obj")
+            mesh.export(f"{data_dir}/e_data/train_mesh/{data_name}_{src_idx}.obj")
         else: # 测试集
-            torch.save({"x": x, "y": y}, f"{data_dir}/data/val_data/{data_name}_{src_idx}.pt")
+            torch.save({"x": x, "y": y}, f"{data_dir}/e_data/val_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
             mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
-            mesh.export(f"{data_dir}/data/val_mesh/{data_name}_{src_idx}.obj")
+            mesh.export(f"{data_dir}/e_data/val_mesh/{data_name}_{src_idx}.obj")
 
 
 if __name__ == "__main__":

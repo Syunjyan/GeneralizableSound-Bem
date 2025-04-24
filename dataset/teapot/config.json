@@ -22,7 +22,7 @@
     ],
     "solver": {
         "src_sample_num": 4,
-        "trg_sample_num": 10000,
+        "trg_sample_num": 1000,
         "freq_min": 100,
         "freq_max": 8000,
         "trg_pos_min": [
