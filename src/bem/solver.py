@@ -130,6 +130,10 @@ class BEM_Solver:
             cuda_imp.single_boundary_potential(self.vertices, self.triangles, points, k)
             @ neumann
         )
+    def single_temp(self, k, points):
+        return cuda_imp.single_boundary_potential(
+            self.vertices, self.triangles, points, k
+        )
 
     def double_potential(self, k, dirichlet, points):
         return (

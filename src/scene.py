@@ -121,7 +121,7 @@ class ObjAnim:
 class Obj:
     def __init__(self, obj_json, data_dir, normalize=True):
         self.name = obj_json["mesh"]
-        if self.name == "ball.obj":
+        if "vibration" in obj_json:
             normalize = True
         obj = StaticObj(os.path.join(data_dir, obj_json["mesh"]), obj_json["size"], normalize)
         self.vertices_base = torch.tensor(obj.vertices).cuda().to(torch.float32)
@@ -275,7 +275,7 @@ class Scene:
         :param sound_source: str, 声源物体的名称。该物体不会被移动或放大缩小。
         """
         RESIZE_BOUNDS = [1., 2.]
-        MOVE_BOUNDS = [-self.bbox_size, self.bbox_size]
+        MOVE_BOUNDS = [-self.bbox_size/2, self.bbox_size/2]
         
         torch.manual_seed(seed)
         np.random.seed(int(seed * 100000) % 1000000007)
@@ -329,7 +329,7 @@ class Scene:
                     sound_source: str="phone.obj",
                     seed: int=0,
                     freq_idx: int=0,
-                    max_freq_idx: int=50,
+                    max_freq_idx: int=65,
                     _transition = True,
                     _rotate = True,
                     _resize = True,
@@ -339,7 +339,7 @@ class Scene:
         '''
         用于生成半包围障碍物的场景。逻辑与`my_sample`类似。
         在处理`MOVE_BOUNDS`时，要注意将声源物体的bbox保持在半包围障碍物的bbox内。(假设只有一个障碍物)
-        非teapot demo需修正代码。
+        如果非teapot demo需修正代码。
         '''
         RESIZE_BOUNDS = [1., 2.]
         move_bounds = None
@@ -356,7 +356,7 @@ class Scene:
         if _rotate:
             rotate_vector = torch.rand(3).cuda() * 100000
             if _rotation_vec is not None:
-                rotate_vector = _rotation_vec
+                rotate_vector = torch.tensor(_rotation_vec).cuda()
         # for container
         rotate_vector[0]=0
         rotate_vector[1]=0
@@ -373,6 +373,7 @@ class Scene:
                 obstacle_bbox *= resize_vector.item()
             else:
                 raise ValueError(f"The '{obj.name}' scene object is not found.")
+                pass
         
         obstacle_bbox *= 0.7 # 尽量保持声源物体bbox球 在 障碍物体内
         d_bbox = torch.clip(-sound_source_bbox+obstacle_bbox, min=0)/2
@@ -387,9 +388,8 @@ class Scene:
                 # 非声源物体随机移动、旋转、缩放
                 # 若不想移动，可以将 move_vector 设置为 0
                 move_vector = torch.rand(3).cuda() * (move_bounds[1] - move_bounds[0]) + move_bounds[0]
-                move_vector[0] = 0 # for teapot demo
-                move_vector[2] = 0
-                # print("check:", move_bounds, move_vector)
+                # move_vector[0] = 0 # for teapot demo
+                # move_vector[2] = 0
                 if _transition_vec is not None:
                     _transition_vec = torch.tensor(_transition_vec).cuda()
                     move_vector = _transition_vec
@@ -408,6 +408,7 @@ class Scene:
             )
             self.vertices = torch.cat([self.vertices, obj.vertices])
             self.neumann = torch.cat([self.neumann, obj.neumann])
+            
         # 保证顶点和三角形的顺序是连续的
         self.vertices = self.vertices.contiguous().float()
         self.triangles = self.triangles.contiguous().int()
@@ -481,80 +482,8 @@ class Scene:
         freq = 10**freq_log
         self.k = (2 * np.pi * freq / 343.2).item()
 
-    def setting(self, rot_factors:torch.Tensor=None, move_factors:torch.Tensor=None, 
-                obj_list_factors:torch.Tensor=None, resize_factor:torch.Tensor=None, 
-                freq_factor:torch.Tensor=None):
-        '''
-        手动设置场景参数，用于第一版的groundtruth声音合成。
-        Manually set the scene parameters. Instead of randomly sampling, the scene is set by the given factors.
 
-        We suggest to define the frequency manually, as the frequency is the main parameter of the scene. Otherwise, the frequency will be randomly sampled.
-        '''
-
-        if rot_factors:
-            assert self.rot_num == len(rot_factors), "rot_factors length error"
-        if move_factors:    
-            assert self.move_num == len(move_factors), "move_factors length error"
-        if obj_list_factors:
-            assert self.obj_list_num == len(obj_list_factors), "obj_list_factors length error"
-        if resize_factor:
-            assert self.resize, "resize_factor error"
-        
-        if freq_factor.item() == 0:
-            self.freq_factor = torch.rand(1).cuda()
-        else :
-            self.freq_factor = freq_factor
-
-        freq_log = (
-            self.freq_factor * (self.freq_max_log - self.freq_min_log)
-            + self.freq_min_log
-        )
-        freq = 10**freq_log
-
-        self.k = (2 * np.pi * freq / 343.2).item()
-
-        rot_idx = 0
-        move_idx = 0
-        obj_list_idx = 0
-        for obj in self.objs:
-            if isinstance(obj, ObjList):
-                obj.sample(obj_list_factors[obj_list_idx].item())
-                obj_list_idx += 1
-            if isinstance(obj, ObjAnim):
-                obj.sample(obj_list_factors[obj_list_idx].item())
-                obj_list_idx += 1
-            obj.reset()
-            if resize_factor:
-                obj.resize(resize_factor.item())
-            if self.rot_num > 0:
-                obj.rotation(rot_factors[rot_idx].item())
-                if obj.rot_axis is not None and rot_idx < self.rot_num - 1:
-                    rot_idx += 1
-            if self.move_num > 0:
-                obj.move(move_factors[move_idx].item())
-                if obj.move_vec is not None and move_idx < self.move_num - 1:
-                    move_idx += 1
-            obj.shift()
-
-        self.vertices = torch.zeros(0, 3).cuda().to(torch.float32)
-        self.triangles = torch.zeros(0, 3).cuda().to(torch.int32)
-        self.neumann = torch.zeros(0).cuda().to(torch.complex64)
-        for obj in self.objs:
-            self.triangles = torch.cat(
-                [self.triangles, obj.triangles + len(self.vertices)]
-            )
-            self.vertices = torch.cat([self.vertices, obj.vertices])
-            self.neumann = torch.cat([self.neumann, obj.neumann])
-        self.vertices = self.vertices.contiguous().float()
-        self.triangles = self.triangles.contiguous().int()
-
-        self.rot_factors = rot_factors
-        self.move_factors = move_factors
-        self.obj_list_factors = obj_list_factors
-        self.resize_factor = resize_factor
-
-
-    def solve(self, man_trg_factor=None):
+    def solve(self, man_trg_point=None):
         '''
         Solve the scene: Calculate the potential of the current (sampled) scene at the target points.
         
@@ -569,26 +498,40 @@ class Scene:
         # mc_dirichlet = mcsolver.neumann2dirichlet(self.k, self.neumann)
         self.dirichlet = solver.neumann2dirichlet(self.k, self.neumann)
 
-        if man_trg_factor is None:
+        # self.rand_index = None
+        if man_trg_point is None:
             sample_points_base = torch.rand(
                 self.trg_sample_num, 3, device="cuda", dtype=torch.float32
             )
             self.trg_factor = sample_points_base
+            rs = (self.trg_factor[:, 0] + 1) * self.bbox_size # (1,2) times the bounding box size，4*a
+            theta = self.trg_factor[:, 1] * np.pi # (0, pi)
+            phi = self.trg_factor[:, 2] * 2 * np.pi - np.pi # (-pi, pi)
+            xs = rs * torch.sin(theta) * torch.cos(phi)
+            ys = rs * torch.sin(theta) * torch.sin(phi)
+            zs = rs * torch.cos(theta)
+            self.xs = xs
+            self.ys = ys
+            self.zs = zs
+            self.trg_points = torch.stack([xs, ys, zs], dim=-1) + self.bbox_center
+
         else :
-            self.trg_factor = man_trg_factor
+            man_trg_point = man_trg_point.reshape(-1,3)
+            if not man_trg_point.is_contiguous():
+                print("Debug: man_trg_point is not contiguous")
+                man_trg_point = man_trg_point.contiguous()
+            self.trg_points = man_trg_point
+
+            # debug: 
+            # self.rand_index = torch.randperm(self.trg_points.shape[0]).cuda()
+            # self.rand_index = torch.arange(self.trg_points.shape[0]).cuda()
+            # self.trg_points = man_trg_point[self.rand_index]
+
             # self.trg_sample_num = man_trg_factor.shape[0]
+            self.xs = self.trg_points[:, 0]
+            self.ys = self.trg_points[:, 1]
+            self.zs = self.trg_points[:, 2]
         
-        rs = (sample_points_base[:, 0] + 1) * self.bbox_size
-        # rs = (self.trg_factor[:, 0]) * self.bbox_size * 2 # (0,2) times the bounding box size，4*a
-        theta = self.trg_factor[:, 1] * np.pi # (0, pi)
-        phi = self.trg_factor[:, 2] * 2 * np.pi - np.pi # (-pi, pi)
-        xs = rs * torch.sin(theta) * torch.cos(phi)
-        ys = rs * torch.sin(theta) * torch.sin(phi)
-        zs = rs * torch.cos(theta)
-        self.xs = xs
-        self.ys = ys
-        self.zs = zs
-        self.trg_points = torch.stack([xs, ys, zs], dim=-1) + self.bbox_center
 
         # mc_potential = mcsolver.boundary2potential(
         #     self.k, self.neumann, mc_dirichlet, self.trg_points
@@ -596,9 +539,7 @@ class Scene:
         self.potential = solver.boundary2potential(
             self.k, self.neumann, self.dirichlet, self.trg_points
         ).cpu()
-        # rerr = torch.norm(self.potential - mc_potential) / torch.norm(mc_potential)
-        # if rerr > 1e-3:
-        #     print("Warning: BEM and MC BEM potential difference is large:", rerr)
+
 
     def show(self, logged_values=False):
         # logged_values: bool, if True, the values will take a log transformation
@@ -800,20 +741,6 @@ def config_add_obj(data_dir, obj_name, size, resize = None, rot_axis=None, rot_p
     with open(f"{data_dir}/config.json", "w") as file:
         json.dump(config, file)
     
-
-def initial_files(data_dir):
-    ''' 
-    TODO
-    '''
-    pass
-    with open(f"{data_dir}/config.json", "w") as file:
-        json.dump(config, file)
-
-    with open(f"{data_dir}/animation_generator.py", "w") as file:
-        file.write("# please generate your animation")
-
-    np.savez(f"{data_dir}/animation_data.npz", data={'x' : np.zeros(0), 'fps' : 30})
-
 
 
 def generate_sample_scene(data_dir, data_name, src_sample_num = None, trg_sample_num = None , show_scene:bool=False):

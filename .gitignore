@@ -5,9 +5,11 @@ output
 .exafmm
 dataset/*/spectrogram
 dataset/spectrogram
+dataset/meshes
 *.pt
 *.png
 *.mp4
+*.wav
 test.blend
 build
 .cache

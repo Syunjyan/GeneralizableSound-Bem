@@ -6,7 +6,7 @@ from src.scene import Scene
 import torch
 from tqdm import tqdm
 
-data_dir = "dataset/NeuPAT_new/combine"
+data_dir = "dataset/combine"
 
 
 scene = Scene(f"{data_dir}/config.json")
@@ -32,8 +32,8 @@ for src_idx in tqdm(range(scene.src_sample_num)):
     x[src_idx, :, -1] = scene.freq_factor
     y[src_idx] = scene.potential.abs().unsqueeze(-1)
 
-    if src_idx == 0:
-        scene.show()
+    # if src_idx == 0:
+        # scene.show()
 
 
 torch.save({"x": x, "y": y}, f"{data_dir}/data/{sys.argv[1]}.pt")

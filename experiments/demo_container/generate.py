@@ -23,7 +23,7 @@ args = parser.parse_args()
 # 选取不同的障碍物，生成数据。
 data_dir = args.data_dir
 
-def detect_available_gpu(max_num_gpu=4, power_threshold=130):
+def detect_available_gpu(max_num_gpu=4, power_threshold=50):
     """
     返回一个数组，数组中的元素为可用的 gpu 的编号。
     凡是功耗小于 50W 的 gpu，都认为是可用的。
@@ -41,20 +41,13 @@ def detect_available_gpu(max_num_gpu=4, power_threshold=130):
             break
     return available_gpu
 
-
-obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
-# 过滤掉非 obj 物体
-obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
-
 os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
-available_gpus = detect_available_gpu(6)
-# 由于柜子demo特殊性，单卡生成即可
+available_gpus = detect_available_gpu(4)
 
 
-
-TRAIN_SRC_DATASIZE = 12
-# VAL_SRC_DATASIZE = 4
+TRAIN_SRC_DATASIZE = 500
+VAL_SRC_DATASIZE = 4
 
 VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量
 
@@ -69,45 +62,28 @@ os.makedirs(f"{data_dir}/data/val_mesh", exist_ok=True)
 os.makedirs(f"{data_dir}/data/val_data", exist_ok=True)
 # 划分训练集和测试集，其中测试集包含部分训练集中没有的mesh。
 
-# 划分训练、测试集obstacles
-train_obstacles = obstacles_name_list[:len(obstacles_name_list)-VAL_UNIQUE_OBSTACLES]
-
-val_obstacles = obstacles_name_list
-
 # 训练集
-
 
 # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
 def generate_data(data_dir, tag, gpu_id, src_num, mode):
     os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_container/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
 
-for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train obstacles")):
+
+pool = multiprocessing.Pool(processes=len(available_gpus))
+for gpu_id in available_gpus:
+    tag = str(gpu_id)
+    pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, TRAIN_SRC_DATASIZE//len(available_gpus), "train"))
     
-    # print(f"obstacles_name: {obstacles_name}, {i+1}/{len(train_obstacles)}")
-    # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
-    os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
-    
-    pool = multiprocessing.Pool(processes=len(available_gpus))
-    for gpu_id in available_gpus:
-        tag = str(gpu_id) + "_" + str(i)
-        pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, TRAIN_SRC_DATASIZE//len(available_gpus), "train"))
-        
-    pool.close()
-    pool.join()
+pool.close()
+pool.join()
 
 
 # 测试集
-for i, obstacles_name in enumerate(tqdm(val_obstacles, desc="Processing val obstacles")):
+
+pool = multiprocessing.Pool(processes=len(available_gpus))
+for gpu_id in available_gpus:
+    tag = str(gpu_id)
+    pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, 1, "val"))
     
-    # print(f"obstacles_name: {obstacles_name}, {i+1}/{len(val_obstacles)}")
-    # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
-    os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
-    
-    
-    pool = multiprocessing.Pool(processes=len(available_gpus))
-    for gpu_id in available_gpus:
-        tag = str(gpu_id) + "_" + str(i)
-        pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, 1, "val"))
-        
-    pool.close()
-    pool.join()
+pool.close()
+pool.join()

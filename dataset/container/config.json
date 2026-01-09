@@ -1,38 +1,38 @@
 {
     "obj": [
         {
-            "mesh": "phone.obj",
-            "size":  0.12,
-            "position": [
-                0,
-                0,
-                0
-            ],
-            "vibration": "y"
-        },
-        {
             "mesh": "obstacle.obj",
-            "size": 0.6,
+            "size": 0.2,
             "position": [
                 0,
                 0,
                 0
             ]
+        },
+        {
+            "mesh": "source.obj",
+            "size": 0.03,
+            "vibration": "-z",
+            "position": [
+                0,
+                0,
+                0.05
+            ]
         }
     ],
     "solver": {
-        "src_sample_num": 4,
-        "trg_sample_num": 10000,
+        "src_sample_num": 300,
+        "trg_sample_num": 2000,
         "freq_min": 100,
-        "freq_max": 8000,
+        "freq_max": 10000,
         "trg_pos_min": [
-            -0.4,
-            -0.4,
-            -0.4
+            -0.2,
+            -0.2,
+            0
         ],
         "trg_pos_max": [
-            0.4,
-            0.4,
+            0.2,
+            0.2,
             0.4
         ]
     }

@@ -5,15 +5,15 @@ import torch
 from .BiCGSTAB import BiCGSTAB
 import numpy as np
 
-import bempp.api
+import bempp_cl.api
 
-bempp.api.BOUNDARY_OPERATOR_DEVICE_TYPE = "gpu"
-bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE = "gpu"
-bempp.api.PLOT_BACKEND = "paraview"
+bempp_cl.api.BOUNDARY_OPERATOR_DEVICE_TYPE = "gpu"
+bempp_cl.api.POTENTIAL_OPERATOR_DEVICE_TYPE = "gpu"
+bempp_cl.api.PLOT_BACKEND = "paraview"
 
-# from bempp.core import opencl_kernels
+# from bempp_cl.core import opencl_kernels
 # opencl_kernels.device_type='gpu'
-# bempp.api.BOUNDARY_OPERATOR_DEVICE_TYPE = "gpu"
+# bempp_cl.api.BOUNDARY_OPERATOR_DEVICE_TYPE = "gpu"
 
 
 def check_tensor(tensor, dtype):
@@ -51,7 +51,7 @@ def solve_linear_equation(A_func, b, x=None, nsteps=500, tol=1e-10, atol=1e-16):
     return solver.solve(b, x=x, nsteps=nsteps, tol=tol, atol=atol)
 
 
-class BEM:
+class BEM_Solver:
     def __init__(self, vertices, triangles):
         if isinstance(vertices, np.ndarray):
             vertices = torch.from_numpy(vertices).cuda().float()
@@ -64,8 +64,8 @@ class BEM:
         self.triangles = triangles
         self.device = vertices.device
         self.normals, self.surface_curls_trans = preprocess(vertices, triangles)
-        self.grid = bempp.api.Grid(self.vertices.T.cpu(), self.triangles.T.cpu())
-        self.space = bempp.api.function_space(self.grid, "P", 1)
+        self.grid = bempp_cl.api.Grid(self.vertices.T.cpu(), self.triangles.T.cpu())
+        self.space = bempp_cl.api.function_space(self.grid, "P", 1)
 
 
     def assemble_boundary_matrix(self, wavenumber, layer_type, approx=False):
@@ -73,7 +73,7 @@ class BEM:
 
         beta = 1j / wavenumber
         if layer_type == "bm_lhs":
-            hyp = bempp.api.operators.boundary.helmholtz.hypersingular(
+            hyp = bempp_cl.api.operators.boundary.helmholtz.hypersingular(
                 space,
                 space,
                 space,
@@ -84,14 +84,14 @@ class BEM:
             hyp = hyp.weak_form().A
 
             hyp_matrix_bempp = torch.from_numpy(hyp).cuda()
-            double_matrix_bempp = bempp.api.operators.boundary.helmholtz.double_layer(
+            double_matrix_bempp = bempp_cl.api.operators.boundary.helmholtz.double_layer(
                 space, space, space, wavenumber
             )
             double_matrix_bempp = torch.from_numpy(double_matrix_bempp.weak_form().A).cuda()
             operator = LHS_bempp = -double_matrix_bempp + beta * hyp_matrix_bempp
         elif layer_type == "bm_rhs":
 
-            adlp = bempp.api.operators.boundary.helmholtz.adjoint_double_layer(
+            adlp = bempp_cl.api.operators.boundary.helmholtz.adjoint_double_layer(
                 space,
                 space,
                 space,
@@ -100,7 +100,7 @@ class BEM:
                 precision="single",
             )
             adlp_matrix_bempp = torch.from_numpy(adlp.weak_form().A).cuda()
-            single_matrix_bempp = bempp.api.operators.boundary.helmholtz.single_layer(
+            single_matrix_bempp = bempp_cl.api.operators.boundary.helmholtz.single_layer(
                 space, space, space, wavenumber
             )
             single_matrix_bempp = torch.from_numpy(single_matrix_bempp.weak_form().A).cuda()
@@ -116,7 +116,7 @@ class BEM:
 
     def identity_matrix(self):
         space = self.space
-        identity = bempp.api.operators.boundary.sparse.identity(
+        identity = bempp_cl.api.operators.boundary.sparse.identity(
             space, space, space, device_interface="opencl", precision="single"
         )
         return torch.from_numpy(identity.weak_form().A.todense()).cuda()
@@ -133,7 +133,7 @@ class BEM:
     
     def single_layer_potential(self, k):
         space = self.space
-        slp = bempp.api.operators.boundary.helmholtz.single_layer(
+        slp = bempp_cl.api.operators.boundary.helmholtz.single_layer(
             space,
             space,
             space,
@@ -145,7 +145,7 @@ class BEM:
 
     def double_layer_potential(self, k):
         space = self.space
-        dlp = bempp.api.operators.boundary.helmholtz.double_layer(
+        dlp = bempp_cl.api.operators.boundary.helmholtz.double_layer(
             space,
             space,
             space,
@@ -157,7 +157,7 @@ class BEM:
     
     # def single_potential(self, k, points):
     #     space = self.space
-    #     slp = bempp.api.operators.potential.helmholtz.single_layer(
+    #     slp = bempp_cl.api.operators.potential.helmholtz.single_layer(
     #         space,
     #         points.T.cpu().numpy(),
     #         k,
@@ -168,7 +168,7 @@ class BEM:
     
     # def double_potential(self, k, points):
     #     space = self.space
-    #     dlp = bempp.api.operators.potential.helmholtz.double_layer(
+    #     dlp = bempp_cl.api.operators.potential.helmholtz.double_layer(
     #         space,
     #         points.T.cpu().numpy(),
     #         k,
@@ -179,20 +179,20 @@ class BEM:
 
     def boundary2potential(self, k, neumann, dirichlet, points):
 
-        neumann = bempp.api.GridFunction(
+        neumann = bempp_cl.api.GridFunction(
             self.space, coefficients=neumann.cpu().numpy()
         )
-        dirichlet = bempp.api.GridFunction(
+        dirichlet = bempp_cl.api.GridFunction(
             self.space, coefficients=dirichlet.cpu().numpy()
         )
-        slp = bempp.api.operators.potential.helmholtz.single_layer(
+        slp = bempp_cl.api.operators.potential.helmholtz.single_layer(
             self.space,
             points.T.cpu().numpy(),
             k,
             device_interface="opencl",
             precision="single",
         ).evaluate(neumann)
-        dlp = bempp.api.operators.potential.helmholtz.double_layer(
+        dlp = bempp_cl.api.operators.potential.helmholtz.double_layer(
             self.space,
             points.T.cpu().numpy(),
             k,
@@ -205,3 +205,4 @@ class BEM:
         return p
         # return -self.single_potential(k, points) + self.double_potential(k, points)
 
+BEM = BEM_Solver

@@ -43,12 +43,12 @@ def detect_available_gpu(max_num_gpu=4, power_threshold=130):
     return available_gpu
 
 
-obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
+# obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
 # 过滤掉非 obj 物体
-obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
+# obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
 
 
-available_gpus = detect_available_gpu(4)
+available_gpus = detect_available_gpu(1)
 # available_gpus = [0]
 # if args.gpu_set == 0:
 #     available_gpus = [0, 1, 2, 3]
@@ -58,7 +58,7 @@ available_gpus = detect_available_gpu(4)
 print(f"available_gpus: {available_gpus}")
 
 
-TRAIN_SRC_DATASIZE = 24
+TRAIN_SRC_DATASIZE = 100
 VAL_SRC_DATASIZE = 4
 
 VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量
@@ -68,16 +68,16 @@ VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量
 # 2025.1.14
 
 
-os.makedirs(f"{data_dir}/e_data/train_mesh", exist_ok=True)
-os.makedirs(f"{data_dir}/e_data/train_data", exist_ok=True)
-os.makedirs(f"{data_dir}/e_data/val_mesh", exist_ok=True)
-os.makedirs(f"{data_dir}/e_data/val_data", exist_ok=True)
+os.makedirs(f"{data_dir}/data/train_mesh", exist_ok=True)
+os.makedirs(f"{data_dir}/data/train_data", exist_ok=True)
+os.makedirs(f"{data_dir}/data/val_mesh", exist_ok=True)
+os.makedirs(f"{data_dir}/data/val_data", exist_ok=True)
 # 划分训练集和测试集，其中测试集包含部分训练集中没有的mesh。
 
 # 划分训练、测试集obstacles
-train_obstacles = obstacles_name_list[:len(obstacles_name_list)-VAL_UNIQUE_OBSTACLES]
+# train_obstacles = obstacles_name_list[:len(obstacles_name_list)-VAL_UNIQUE_OBSTACLES]
 
-val_obstacles = obstacles_name_list
+# val_obstacles = obstacles_name_list
 
 # 训练集
 
@@ -86,33 +86,33 @@ val_obstacles = obstacles_name_list
 def generate_data(data_dir, tag, gpu_id, src_num, mode):
     os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_teapot/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
 
-for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train obstacles")):
+# for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train obstacles")):
     
-    # print(f"obstacles_name: {obstacles_name}, {i+1}/{len(train_obstacles)}")
-    # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
-    os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
+    # # print(f"obstacles_name: {obstacles_name}, {i+1}/{len(train_obstacles)}")
+    # # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
+    # os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
     
-    pool = multiprocessing.Pool(processes=len(available_gpus))
-    for gpu_id in available_gpus:
-        tag = str(gpu_id) + "_" + str(i)
-        pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, TRAIN_SRC_DATASIZE//len(available_gpus), "train"))
-        
-    pool.close()
-    pool.join()
+pool = multiprocessing.Pool(processes=len(available_gpus))
+for gpu_id in available_gpus:
+    tag = str(gpu_id) 
+    pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, TRAIN_SRC_DATASIZE//len(available_gpus), "train"))
+    
+pool.close()
+pool.join()
 
 
 # 测试集
-for i, obstacles_name in enumerate(tqdm(val_obstacles, desc="Processing val obstacles")):
+# for i, obstacles_name in enumerate(tqdm(val_obstacles, desc="Processing val obstacles")):
     
     # print(f"obstacles_name: {obstacles_name}, {i+1}/{len(val_obstacles)}")
     # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
-    os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
+    # os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
     
     
-    pool = multiprocessing.Pool(processes=len(available_gpus))
-    for gpu_id in available_gpus:
-        tag = str(gpu_id) + "_" + str(i)
-        pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, 1, "val"))
-        
-    pool.close()
-    pool.join()
+pool = multiprocessing.Pool(processes=len(available_gpus))
+for gpu_id in available_gpus:
+    tag = str(gpu_id)
+    pool.apply_async(generate_data, args=(data_dir, tag, gpu_id, 1, "val"))
+    
+pool.close()
+pool.join()

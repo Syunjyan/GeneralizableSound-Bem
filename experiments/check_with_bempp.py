@@ -1,5 +1,5 @@
 """
-Compare the boundary matrices computed by Bempp and the CUDA BEM solver.
+Compare the boundary matrices computed by bempp_cl-cl and the CUDA BEM solver.
 
 Origin by Jinxutong
 Edit by Houxinyun
@@ -10,22 +10,22 @@ import sys
 sys.path.append("./")
 from src.bem.solver import BEM_Solver
 from src.bem.vallinaBem import BEM
-import bempp.api
+import bempp_cl.api
 import torch
 import numpy as np
 
 torch.set_printoptions(precision=5)
 
-bempp.api.BOUNDARY_OPERATOR_DEVICE_TYPE = "gpu"
-bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE = "gpu"
-bempp.api.PLOT_BACKEND = "gmsh"
-grid = bempp.api.shapes.regular_sphere(0)
+bempp_cl.api.BOUNDARY_OPERATOR_DEVICE_TYPE = "gpu"
+bempp_cl.api.POTENTIAL_OPERATOR_DEVICE_TYPE = "gpu"
+bempp_cl.api.PLOT_BACKEND = "gmsh"
+grid = bempp_cl.api.shapes.regular_sphere(0)
 grid.plot()
 vertices = torch.from_numpy(grid.vertices.T.astype("float32")).cuda()
 print(vertices)
 triangles = torch.from_numpy(grid.elements.T.astype("int32")).cuda()
 print(triangles)
-space = bempp.api.function_space(grid, "P", 1)
+space = bempp_cl.api.function_space(grid, "P", 1)
 
 check_points = torch.tensor(
     [
@@ -79,7 +79,8 @@ for wave_number in [1, 10, 100]:
         print(double_matrix_cuda)
         print("double_matrix_bempp:")
         print(double_matrix_bempp)
-
+    
+    # neumann2dirichlet 相关函数
     LHS_bempp = vallina_bem.assemble_boundary_matrix(wave_number, "bm_lhs")
     LHS_cuda = cuda_bem.assemble_boundary_matrix(wave_number, "bm_lhs")
     rerr = torch.norm(LHS_bempp - LHS_cuda) / torch.norm(LHS_bempp)
@@ -100,7 +101,7 @@ for wave_number in [1, 10, 100]:
         print("RHS_bempp:")
         print(RHS_bempp)
 
-    grid_fun = bempp.api.GridFunction(
+    grid_fun = bempp_cl.api.GridFunction(
         space, coefficients=np.random.rand(space.global_dof_count)
     )
     # in code (needed)
@@ -108,7 +109,7 @@ for wave_number in [1, 10, 100]:
         wave_number,
         check_points
     )
-    dlp = bempp.api.operators.potential.helmholtz.double_layer(
+    dlp = bempp_cl.api.operators.potential.helmholtz.double_layer(
         space,
         check_points.T.cpu().numpy(),
         wave_number,

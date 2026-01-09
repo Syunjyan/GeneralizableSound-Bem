@@ -44,10 +44,11 @@ def custom(data_dir, data_name, src_sample_num = None, trg_sample_num = None ,
             # 自随机一个小于0.3的向量，使cup向-y移动
             _transition_vec = np.zeros(3)
             _transition_vec[1] = -np.random.rand() * 0.3
-            scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src,
+            scene.enclose_sample(seed=seed, freq_idx=freq_idx, sound_source=sound_src,
                                  _resize=False, _rotate = False, _transition_vec = _transition_vec)
 
             scene.solve()
+            scene.show()
 
             x[:, :3] = scene.trg_points
          
