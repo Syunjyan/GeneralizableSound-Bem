@@ -3,10 +3,8 @@
 import os, sys
 
 sys.path.append("./")
-os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
+# os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
-from src.scene import Scene, generate_sample_scene_simpler
-import torch
 from tqdm import tqdm
 import multiprocessing
 
@@ -48,7 +46,7 @@ def detect_available_gpu(max_num_gpu=4, power_threshold=130):
 # obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
 
 
-available_gpus = detect_available_gpu(1)
+available_gpus = detect_available_gpu(4)
 # available_gpus = [0]
 # if args.gpu_set == 0:
 #     available_gpus = [0, 1, 2, 3]
@@ -75,16 +73,15 @@ os.makedirs(f"{data_dir}/data/val_data", exist_ok=True)
 # 划分训练集和测试集，其中测试集包含部分训练集中没有的mesh。
 
 # 划分训练、测试集obstacles
-# train_obstacles = obstacles_name_list[:len(obstacles_name_list)-VAL_UNIQUE_OBSTACLES]
-
-# val_obstacles = obstacles_name_list
 
 # 训练集
 
 
 # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
 def generate_data(data_dir, tag, gpu_id, src_num, mode):
-    os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_teapot/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+    # 指向空间充裕的 /data5 盘，并在进程结束时自动清理整个工作文件夹
+    os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; export TMPDIR=/data5/houxinyun/kwave_worker_{gpu_id}; mkdir -p $TMPDIR; python experiments/demo_teapot/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}; rm -rf $TMPDIR")
+
 
 # for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train obstacles")):
     

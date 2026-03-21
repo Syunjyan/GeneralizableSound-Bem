@@ -6,6 +6,7 @@ output
 dataset/*/spectrogram
 dataset/spectrogram
 dataset/meshes
+cache/
 *.pt
 *.png
 *.mp4

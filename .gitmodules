@@ -1,0 +1,3 @@
+[submodule "kwave_solver"]
+	path = kwave_solver
+	url = https://github.com/Syunjyan/Kwave_solver.git

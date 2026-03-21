@@ -1,0 +1,14 @@
+{
+  "bem_mean_linear": 0.0001290529827411564,
+  "fdtd_mean_linear": 0.01048230852965599,
+  "bem_mean_log10": -4.0427443705859725,
+  "fdtd_mean_log10": -2.6343091707689834,
+  "receiver": [
+    0.4,
+    0.4,
+    0.4
+  ],
+  "source_object": "ball.obj",
+  "source_vibration": "w",
+  "num_freq_bins": 65
+}

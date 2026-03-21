@@ -22,7 +22,7 @@ args = parser.parse_args()
 # 选取不同的障碍物，生成数据。
 data_dir = args.data_dir
 
-def detect_available_gpu(max_num_gpu=4, power_threshold=130):
+def detect_available_gpu(max_num_gpu=4, power_threshold=50):
     """
     返回一个数组，数组中的元素为可用的 gpu 的编号。
     凡是功耗小于 50W 的 gpu，都认为是可用的。
