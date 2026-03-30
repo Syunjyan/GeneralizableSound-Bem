@@ -1,10 +1,10 @@
-import sys
-
+import os, sys
 sys.path.append("./")
+
+os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
 from src.scene import Scene, generate_sample_scene_simpler
 import torch
-import os, sys
 from tqdm import tqdm
 import multiprocessing
 
@@ -44,8 +44,6 @@ def detect_available_gpu(max_num_gpu=4, power_threshold=50):
 obstacles_name_list = os.listdir(os.path.join(data_dir, "my_obstacles"))
 # 过滤掉非 obj 物体
 obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
-
-os.environ["TORCH_CUDA_ARCH_LIST"]="8.6"
 
 available_gpus = detect_available_gpu(4)
 # available_gpus = [0, 1, 2, 3]

@@ -60,12 +60,14 @@ def custom(data_dir, data_name, src_sample_num = None, trg_sample_num = None ,
         if split_mode == 'train':
             torch.save({"x": x, "y": y}, f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh = scene.get_obstacle_mesh()
+            # mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
             mesh.export(f"{data_dir}/data/train_mesh/{data_name}_{src_idx}.obj")
         else: # 测试集
             torch.save({"x": x, "y": y}, f"{data_dir}/data/val_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh = scene.get_obstacle_mesh()
+            # mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
             mesh.export(f"{data_dir}/data/val_mesh/{data_name}_{src_idx}.obj")
 
 

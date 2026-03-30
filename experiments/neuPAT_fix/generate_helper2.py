@@ -20,7 +20,7 @@ if __name__ == "__main__":
         src_num = int(sys.argv[4])
         mode = sys.argv[5]
     
-    if mode != 'train':
+    if mode == 'val':
         src_num = 1 # only 1 source in test and val
 
     if os.path.exists(f"{data_dir}/e_data/{mode}_mesh/out_{tag}_0.obj"):

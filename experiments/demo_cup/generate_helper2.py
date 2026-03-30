@@ -14,7 +14,7 @@ import trimesh
 def custom(data_dir, data_name, src_sample_num = None, trg_sample_num = None , 
                              show_scene:bool=False,
                              split_mode:str = 'train',
-                             sound_src:str = 'phone.obj',
+                             sound_src:str = 'ball.obj',
                              gpu_id = 0
                              ):
     scene = Scene(f"{data_dir}/config.json")
@@ -58,12 +58,14 @@ def custom(data_dir, data_name, src_sample_num = None, trg_sample_num = None ,
         if split_mode == 'train':
             torch.save({"x": x, "y": y}, f"{data_dir}/e_data/train_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh = scene.get_obstacle_mesh()
+            # mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
             mesh.export(f"{data_dir}/e_data/train_mesh/{data_name}_{src_idx}.obj")
         else: # 测试集
             torch.save({"x": x, "y": y}, f"{data_dir}/e_data/val_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh = scene.get_obstacle_mesh()
+            # mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
             mesh.export(f"{data_dir}/e_data/val_mesh/{data_name}_{src_idx}.obj")
 
 
@@ -80,7 +82,7 @@ if __name__ == "__main__":
         src_num = int(sys.argv[4])
         mode = sys.argv[5]
     
-    if mode != 'train':
+    if mode == 'val':
         src_num = 1 # only 1 source in test and val
 
     # if os.path.exists(f"{data_dir}/data/{mode}_mesh/out_{tag}_0.obj"):
@@ -94,14 +96,14 @@ if __name__ == "__main__":
                     src_sample_num=src_num,
                     show_scene=False,
                     split_mode=mode,
-                    sound_src="phone.obj",
+                    sound_src="ball.obj",
                     gpu_id=gpu_id
                     )
 
     # generate_sample_enclosed(data_dir, f"out_{tag}",
     #                                 src_sample_num=src_num,
     #                                 show_scene=False,
-    #                                 sound_src="phone.obj",
+    #                                 sound_src="ball.obj",
     #                                 split_mode=mode,
     #                                 gpu_id=gpu_id,
     #                                 skip=skip,

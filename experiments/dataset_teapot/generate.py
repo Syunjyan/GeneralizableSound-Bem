@@ -46,8 +46,8 @@ def detect_available_gpu(max_num_gpu=4, power_threshold=50):
 # obstacles_name_list = [obstacles_name for obstacles_name in obstacles_name_list if obstacles_name.endswith(".obj")]
 
 
-available_gpus = detect_available_gpu(4)
-# available_gpus = [0]
+# available_gpus = detect_available_gpu(2)
+available_gpus = [5,6]
 # if args.gpu_set == 0:
 #     available_gpus = [0, 1, 2, 3]
 # else:
@@ -58,10 +58,10 @@ print(f"available_gpus: {available_gpus}")
 
 obstacles_name_list = os.listdir(os.path.join(data_dir, "teapot_3"))
 
-TRAIN_SRC_DATASIZE = 24
+TRAIN_SRC_DATASIZE = 10*2
 VAL_SRC_DATASIZE = 4
 
-VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量
+VAL_UNIQUE_OBSTACLES = 2 # 训练集中没有的障碍物数量
 
 # type = args.type
 
@@ -76,7 +76,6 @@ os.makedirs(f"{data_dir}/teapot_data/val_data", exist_ok=True)
 
 # 划分训练、测试集obstacles
 
-# 训练集
 
 
 # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
@@ -84,8 +83,8 @@ def generate_data(data_dir, tag, gpu_id, obstacle_name, src_num, mode):
     # 指向空间充裕的 /data5 盘，并在进程结束时自动清理整个工作文件夹
     os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; export TMPDIR=/data5/houxinyun/kwave_worker_{gpu_id}; mkdir -p $TMPDIR; python experiments/dataset_teapot/generate_helper.py {data_dir} {obstacle_name} {tag} {gpu_id} {src_num} {mode}; rm -rf $TMPDIR")
 
-
-for i, obstacles_name in enumerate(tqdm(obstacles_name_list, desc="Processing train obstacles")):
+# 训练集
+for i, obstacles_name in enumerate(tqdm(obstacles_name_list[:-(VAL_UNIQUE_OBSTACLES)], desc="Processing train obstacles")):
     pool = multiprocessing.Pool(processes=len(available_gpus))
     for gpu_id in available_gpus:
         tag = str(gpu_id)  + "_" + obstacles_name.split("_")[1]
@@ -95,12 +94,8 @@ for i, obstacles_name in enumerate(tqdm(obstacles_name_list, desc="Processing tr
     pool.join()
 
 
+# 测试集
 for i, obstacles_name in enumerate(tqdm(obstacles_name_list, desc="Processing val obstacles")):
-    
-    # print(f"obstacles_name: {obstacles_name}, {i+1}/{len(val_obstacles)}")
-    # 复制该物体到 data_dir，并将其重命名为 obstacle.obj。若已存在，则覆盖。
-    # os.system(f"cp {os.path.join(data_dir, 'my_obstacles', obstacles_name)} {os.path.join(data_dir, 'obstacle.obj')}")
-    
     
     pool = multiprocessing.Pool(processes=len(available_gpus))
     for gpu_id in available_gpus:
@@ -115,7 +110,7 @@ for i, obstacles_name in enumerate(tqdm(obstacles_name_list, desc="Processing va
 os.makedirs(f"{data_dir}/teapot_data/no_gaizi_mesh", exist_ok=True)
 os.makedirs(f"{data_dir}/teapot_data/no_gaizi_data", exist_ok=True)
 
-for i, obstacles_name in enumerate(tqdm(obstacles_name_list, desc="Processing train obstacles")):
+for i, obstacles_name in enumerate(tqdm(obstacles_name_list[:-(VAL_UNIQUE_OBSTACLES)], desc="Processing no_gaizi obstacles")):
     pool = multiprocessing.Pool(processes=len(available_gpus))
     for gpu_id in available_gpus:
         tag = str(gpu_id)  + "_" + obstacles_name.split("_")[1]

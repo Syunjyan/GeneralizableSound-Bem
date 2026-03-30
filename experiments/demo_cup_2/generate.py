@@ -59,7 +59,7 @@ available_gpus = detect_available_gpu(4) # 5卡，别烧，please
 print(f"available_gpus: {available_gpus}")
 
 
-TRAIN_SRC_DATASIZE = 20
+TRAIN_SRC_DATASIZE = 60
 # VAL_SRC_DATASIZE = 4
 
 VAL_UNIQUE_OBSTACLES = 0 # 训练集中没有的障碍物数量
@@ -85,7 +85,7 @@ val_obstacles = obstacles_name_list
 
 # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
 def generate_data(data_dir, tag, gpu_id, src_num, mode):
-    os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_cup/generate_helper2.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+    os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/demo_cup_2/generate_helper2.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
 
 for i, obstacles_name in enumerate(tqdm(train_obstacles, desc="Processing train obstacles")):
     

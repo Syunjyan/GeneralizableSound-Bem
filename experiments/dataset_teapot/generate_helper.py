@@ -125,7 +125,7 @@ if __name__ == "__main__":
         src_num = int(sys.argv[5])
         mode = sys.argv[6]
     
-    if mode == 'val' or mode == 'test':
+    if mode == 'val':
         src_num = 1 # only 1 source in test and val
 
     # if os.path.exists(f"{data_dir}/teapot_data/{mode}_mesh/out_{tag}_0.obj"):

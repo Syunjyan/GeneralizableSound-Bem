@@ -1,14 +1,14 @@
 {
     "obj": [
         {
-            "mesh": "phone.obj",
-            "size":  0.12,
+            "mesh": "ball.obj",
+            "size":  0.02,
             "position": [
                 0,
                 0,
                 0
             ],
-            "vibration": "y"
+            "vibration": "w"
         },
         {
             "mesh": "obstacle.obj",
@@ -22,7 +22,7 @@
     ],
     "solver": {
         "src_sample_num": 4,
-        "trg_sample_num": 10000,
+        "trg_sample_num": 1000,
         "freq_min": 100,
         "freq_max": 8000,
         "trg_pos_min": [

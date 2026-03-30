@@ -376,7 +376,7 @@ class Scene:
                 pass
         
         obstacle_bbox *= 0.7 # 尽量保持声源物体bbox球 在 障碍物体内
-        d_bbox = torch.clip(-sound_source_bbox+obstacle_bbox, min=0)/2
+        d_bbox = torch.clip(-sound_source_bbox+obstacle_bbox, min=0)
 
         move_bounds = [-d_bbox , d_bbox]
 
@@ -549,6 +549,17 @@ class Scene:
             if self.trg_points is not None:
                 vis.add_points(self.trg_points, torch.log10(torch.clip(self.potential.abs(), 1e-6, 1e6)))
             vis.show()
+
+    def get_obstacle_mesh(self) -> trimesh.Trimesh:
+        obstacles = None
+        for obj in self.objs:
+            if obj.name != "phone.obj" and obj.name != "ball.obj" and obj.name != "source.obj":
+                obstacle = trimesh.Trimesh(obj.vertices.detach().cpu().numpy(), obj.triangles.detach().cpu().numpy())
+                if obstacles is None:
+                    obstacles = obstacle
+                else:
+                    obstacles = trimesh.util.concatenate(obstacles, obstacle)
+        return obstacles
 
 
 class EditableModalSound:
@@ -832,12 +843,13 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
         if split_mode == 'train':
             torch.save({"x": x, "y": y}, f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh = scene.get_obstacle_mesh()
+            # mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
             mesh.export(f"{data_dir}/data/train_mesh/{data_name}_{src_idx}.obj")
         else: # 测试集
             torch.save({"x": x, "y": y}, f"{data_dir}/data/val_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh = scene.get_obstacle_mesh()
             mesh.export(f"{data_dir}/data/val_mesh/{data_name}_{src_idx}.obj")
 
 
@@ -895,10 +907,11 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
         if split_mode == 'train':
             torch.save({"x": x, "y": y}, f"{data_dir}/e_data/train_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh = scene.get_obstacle_mesh()
+            # mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
             mesh.export(f"{data_dir}/e_data/train_mesh/{data_name}_{src_idx}.obj")
         else: # 测试集
             torch.save({"x": x, "y": y}, f"{data_dir}/e_data/val_data/{data_name}_{src_idx}.pt")
             # 以obj格式存储几何形状
-            mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
+            mesh = scene.get_obstacle_mesh()
             mesh.export(f"{data_dir}/e_data/val_mesh/{data_name}_{src_idx}.obj")
