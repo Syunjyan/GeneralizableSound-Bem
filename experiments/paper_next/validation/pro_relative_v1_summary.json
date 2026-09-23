@@ -1,0 +1,41 @@
+{
+  "dataset": "../GeneralizableSound/data/pro_relative_v1",
+  "target": "relative_transfer",
+  "query_shape_per_scene": [
+    2000,
+    65
+  ],
+  "counts": {
+    "bem_general": 3,
+    "bem_enclosed": 3,
+    "fdtd_teapot": 3,
+    "total": 9
+  },
+  "test_object_ids": {
+    "bem_general": [
+      16,
+      17,
+      18
+    ],
+    "bem_enclosed": [
+      16,
+      17,
+      18
+    ],
+    "fdtd_teapot": [
+      7,
+      12,
+      17
+    ]
+  },
+  "pairing_errors": 0,
+  "nonfinite_samples": 0,
+  "exact_duplicate_meshes": 0,
+  "global_transfer_min": 0.00021042494336143136,
+  "global_transfer_max": 22261.126953125,
+  "notes": [
+    "FDTD endpoint artifacts were removed by the frozen nearest-resolved-bin convention.",
+    "The remaining global maximum is a 4 kHz lossless BEM enclosed-cavity resonance, not a free-field division artifact.",
+    "Future pro_relative_v1 training data must exclude all listed test object IDs."
+  ]
+}
