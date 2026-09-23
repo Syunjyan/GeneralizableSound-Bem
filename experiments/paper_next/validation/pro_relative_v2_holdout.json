@@ -1,0 +1,90 @@
+{
+  "test_dataset": "/home/houxinyun/NeuralSoundField/GeneralizableSound/data/pro_relative_v2",
+  "train_dataset": "/home/houxinyun/NeuralSoundField/GeneralizableSound/data/NAT_data",
+  "train_general_vertex_counts": 19,
+  "train_enclosed_vertex_counts": 34,
+  "train_teapot_object_ids": [
+    2,
+    4,
+    5,
+    9,
+    10,
+    16,
+    18
+  ],
+  "scenes": [
+    {
+      "scene": "bem_enclosed_obj200_sample000",
+      "category": "enclosed",
+      "object_id": 200,
+      "vertices": 14942,
+      "held_out": true,
+      "reason": "vertex_count_absent_from_training"
+    },
+    {
+      "scene": "bem_enclosed_obj201_sample000",
+      "category": "enclosed",
+      "object_id": 201,
+      "vertices": 12997,
+      "held_out": true,
+      "reason": "vertex_count_absent_from_training"
+    },
+    {
+      "scene": "bem_enclosed_obj202_sample000",
+      "category": "enclosed",
+      "object_id": 202,
+      "vertices": 11406,
+      "held_out": true,
+      "reason": "vertex_count_absent_from_training"
+    },
+    {
+      "scene": "bem_general_obj100_sample000",
+      "category": "general",
+      "object_id": 100,
+      "vertices": 6358,
+      "held_out": true,
+      "reason": "vertex_count_absent_from_training"
+    },
+    {
+      "scene": "bem_general_obj101_sample000",
+      "category": "general",
+      "object_id": 101,
+      "vertices": 8930,
+      "held_out": true,
+      "reason": "vertex_count_absent_from_training"
+    },
+    {
+      "scene": "bem_general_obj102_sample000",
+      "category": "general",
+      "object_id": 102,
+      "vertices": 11505,
+      "held_out": true,
+      "reason": "vertex_count_absent_from_training"
+    },
+    {
+      "scene": "fdtd_teapot_obj007_sample000",
+      "category": "teapot",
+      "object_id": 7,
+      "vertices": 260066,
+      "held_out": true,
+      "reason": "object_id_absent_from_training"
+    },
+    {
+      "scene": "fdtd_teapot_obj012_sample000",
+      "category": "teapot",
+      "object_id": 12,
+      "vertices": 237637,
+      "held_out": true,
+      "reason": "object_id_absent_from_training"
+    },
+    {
+      "scene": "fdtd_teapot_obj017_sample000",
+      "category": "teapot",
+      "object_id": 17,
+      "vertices": 227556,
+      "held_out": true,
+      "reason": "object_id_absent_from_training"
+    }
+  ],
+  "violations": []
+}

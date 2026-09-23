@@ -1,0 +1,31 @@
+{
+  "dataset": "../GeneralizableSound/data/pro_relative_v2",
+  "status": "final_test_protocol",
+  "target": "relative_transfer",
+  "query_shape_per_scene": [
+    2000,
+    65
+  ],
+  "counts": {
+    "bem_general": 3,
+    "bem_enclosed": 3,
+    "fdtd_teapot": 3,
+    "total": 9
+  },
+  "pairing_errors": 0,
+  "nonfinite_samples": 0,
+  "geometry_holdout_violations": 0,
+  "exact_duplicate_meshes": 0,
+  "global_transfer_min": 0.00021042494336143136,
+  "global_transfer_max": 110.44949340820312,
+  "encoded_log10_range": [
+    -3.6769027709960938,
+    2.043163776397705
+  ],
+  "notes": [
+    "All six BEM test meshes have vertex counts absent from the corresponding Pro_1 training subset.",
+    "All three FDTD teapot object IDs are absent from Pro_1 teapot training.",
+    "Every scene contains 2000 listener points and 65 finite relative-transfer channels.",
+    "Bins 0 and 64 use the frozen nearest-resolved-bin endpoint convention."
+  ]
+}
