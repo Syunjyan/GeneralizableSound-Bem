@@ -1,0 +1,80 @@
+{
+  "name": "pro_relative_v1",
+  "target": "relative_transfer",
+  "query_count": 2000,
+  "seed": 20260924,
+  "splits": {
+    "bem_general": {
+      "template_dataset": "../GeneralizableSound/data_big/shapenet/train_mesh",
+      "train_object_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "test_object_ids": [
+        16,
+        17,
+        18
+      ],
+      "reference": "analytic_sphere"
+    },
+    "bem_enclosed": {
+      "template_dataset": "../GeneralizableSound/data_big/shapenet_bbw/train_mesh",
+      "train_object_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "test_object_ids": [
+        16,
+        17,
+        18
+      ],
+      "reference": "analytic_sphere"
+    },
+    "fdtd_teapot": {
+      "template_dataset": "../GeneralizableSound/data_big/teapot_data/val_mesh",
+      "train_object_ids": [
+        2,
+        4,
+        5,
+        9,
+        10,
+        16,
+        18
+      ],
+      "test_object_ids": [
+        7,
+        12,
+        17
+      ],
+      "reference": "simulated_free_field"
+    }
+  }
+}

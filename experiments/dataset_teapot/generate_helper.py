@@ -102,13 +102,37 @@ def custom(data_dir, teapot_id, data_name,
         
         
         if split_mode == 'train':
-            torch.save({"x": x, "y": y}, f"{data_dir}/teapot_data/train_data/{data_name}_{src_idx}.pt")
+            torch.save(
+                {
+                    "x": x,
+                    "y": y,
+                    "solver": "fdtd",
+                    "target": "relative_transfer",
+                },
+                f"{data_dir}/teapot_data/train_data/{data_name}_{src_idx}.pt",
+            )
             mesh.export(f"{data_dir}/teapot_data/train_mesh/{data_name}_{src_idx}.obj")
         elif split_mode == 'no_gaizi':
-            torch.save({"x": x, "y": y}, f"{data_dir}/teapot_data/no_gaizi_data/{data_name}_{src_idx}.pt")
+            torch.save(
+                {
+                    "x": x,
+                    "y": y,
+                    "solver": "fdtd",
+                    "target": "relative_transfer",
+                },
+                f"{data_dir}/teapot_data/no_gaizi_data/{data_name}_{src_idx}.pt",
+            )
             mesh.export(f"{data_dir}/teapot_data/no_gaizi_mesh/{data_name}_{src_idx}.obj")
         else: # 测试集
-            torch.save({"x": x, "y": y}, f"{data_dir}/teapot_data/val_data/{data_name}_{src_idx}.pt")
+            torch.save(
+                {
+                    "x": x,
+                    "y": y,
+                    "solver": "fdtd",
+                    "target": "relative_transfer",
+                },
+                f"{data_dir}/teapot_data/val_data/{data_name}_{src_idx}.pt",
+            )
             mesh.export(f"{data_dir}/teapot_data/val_mesh/{data_name}_{src_idx}.obj")
 
 

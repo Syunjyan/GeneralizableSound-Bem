@@ -14,6 +14,12 @@ parser = argparse.ArgumentParser(description="Generate data using Point soundsou
 
 parser.add_argument("--data_dir", "-d", type=str, default="dataset/fix", help="Directory of the dataset, for example, dataset/fix")
 parser.add_argument("--type", "-t", type=str, default="obstacle", help="Generate type: obstacle or enclosed")
+parser.add_argument(
+    "--target-mode",
+    choices=("magnitude", "relative_transfer"),
+    default="magnitude",
+    help="Supervision target. Use relative_transfer for CVMJ datasets.",
+)
 # parser.add_argument("--gpu_set", "-g", type=int, default=0, help="GPU set.")
 
 args = parser.parse_args()
@@ -21,6 +27,7 @@ args = parser.parse_args()
 # 2024.12.12 
 # 选取不同的障碍物，生成数据。
 data_dir = args.data_dir
+target_mode = args.target_mode
 
 def detect_available_gpu(max_num_gpu=4, power_threshold=50):
     """
@@ -106,7 +113,7 @@ if type == "obstacle":
         
         # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
         def generate_data(data_dir, tag, gpu_id, src_num, mode):
-            os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+            os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode} {target_mode}")
         
         pool = multiprocessing.Pool(processes=len(available_gpus))
         for gpu_id in available_gpus:
@@ -126,7 +133,7 @@ if type == "obstacle":
         
         # 多进程，每个进程调用一次 python generate_helper.py data_dir tag
         def generate_data(data_dir, tag, gpu_id, src_num, mode):
-            os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+            os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper.py {data_dir} {tag} {gpu_id} {src_num} {mode} {target_mode}")
         
         pool = multiprocessing.Pool(processes=len(available_gpus))
         for gpu_id in available_gpus:
@@ -157,7 +164,7 @@ elif type == "demo":
 
 
     def generate_data2(data_dir, tag, gpu_id, src_num, mode):
-        os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper2.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+        os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper2.py {data_dir} {tag} {gpu_id} {src_num} {mode} {target_mode}")
         # os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper_tmp.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
 
     # 训练集
@@ -211,7 +218,7 @@ else:
 
 
     def generate_data2(data_dir, tag, gpu_id, src_num, mode):
-        os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper2.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
+        os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper2.py {data_dir} {tag} {gpu_id} {src_num} {mode} {target_mode}")
         # os.system(f"export CUDA_VISIBLE_DEVICES={gpu_id}; python experiments/neuPAT_fix/generate_helper_tmp.py {data_dir} {tag} {gpu_id} {src_num} {mode}")
 
     # 训练集

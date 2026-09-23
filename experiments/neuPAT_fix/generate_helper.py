@@ -15,9 +15,12 @@ if __name__ == "__main__":
     mode = 'train'
 
     src_num = None
+    target_mode = "magnitude"
     if len(sys.argv) > 4:
         src_num = int(sys.argv[4])
         mode = sys.argv[5]
+    if len(sys.argv) > 6:
+        target_mode = sys.argv[6]
     
     if mode != 'train':
         src_num = 1 # only 1 source in test and val
@@ -33,5 +36,6 @@ if __name__ == "__main__":
                                   src_sample_num=src_num,
                                   show_scene=False,
                                   split_mode=mode,
-                                  gpu_id=gpu_id)
+                                  gpu_id=gpu_id,
+                                  target_mode=target_mode)
 

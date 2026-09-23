@@ -1,0 +1,7 @@
+{
+  "fdtd": {
+    "identity_max_abs_error": 0.0,
+    "transfer_min": 1.0,
+    "transfer_max": 1.0
+  }
+}

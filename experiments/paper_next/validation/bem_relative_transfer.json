@@ -1,0 +1,10 @@
+{
+  "bem": {
+    "identity_max_abs_error": 0.0,
+    "free_field_r_times_p_relative_spread": 0.00017724253120832145,
+    "analytic_sphere_relative_l2": 0.016676122322678566,
+    "source_radius_m": 0.009999999776482582,
+    "scene_transfer_min": 0.04011412709951401,
+    "scene_transfer_max": 0.09414907544851303
+  }
+}

@@ -540,6 +540,114 @@ class Scene:
             self.k, self.neumann, self.dirichlet, self.trg_points
         ).cpu()
 
+    def solve_free_field(self, sound_source: str = "ball.obj"):
+        """Solve the source-only field at the current target points.
+
+        The source mesh and its Neumann boundary condition are kept identical
+        to the full-scene solve.  Removing every passive obstacle makes this a
+        numerical free-field reference whose arbitrary source scale cancels in
+        a relative transfer magnitude.
+        """
+        if self.trg_points is None:
+            raise RuntimeError("Call solve() before solve_free_field().")
+
+        sources = [obj for obj in self.objs if getattr(obj, "name", None) == sound_source]
+        if len(sources) != 1:
+            raise ValueError(
+                f"Expected exactly one source object named {sound_source!r}, "
+                f"found {len(sources)}."
+            )
+
+        source = sources[0]
+        vertices = source.vertices.contiguous().float()
+        triangles = source.triangles.contiguous().int()
+        neumann = source.neumann.contiguous().to(torch.complex64)
+
+        solver = BEM_Solver(vertices, triangles)
+        dirichlet = solver.neumann2dirichlet(self.k, neumann)
+        self.free_field_potential = solver.boundary2potential(
+            self.k, neumann, dirichlet, self.trg_points
+        ).cpu()
+        return self.free_field_potential
+
+    def relative_transfer_magnitude(
+        self,
+        sound_source: str = "ball.obj",
+        eps: float = 1e-12,
+        reference_mode: str = "numerical",
+    ):
+        """Return ``|p_scene| / |p_free|`` for the current solved scene."""
+        if not hasattr(self, "potential"):
+            raise RuntimeError("Call solve() before relative_transfer_magnitude().")
+
+        if reference_mode == "numerical":
+            denominator = self.solve_free_field(sound_source).abs()
+        elif reference_mode == "analytic_sphere":
+            sources = [
+                obj
+                for obj in self.objs
+                if getattr(obj, "name", None) == sound_source
+            ]
+            if len(sources) != 1:
+                raise ValueError(
+                    f"Expected exactly one source object named {sound_source!r}, "
+                    f"found {len(sources)}."
+                )
+            source = sources[0]
+            extents = source.vertices.max(dim=0).values - source.vertices.min(
+                dim=0
+            ).values
+            if float(extents.max() / extents.min()) > 1.05:
+                raise ValueError(
+                    "analytic_sphere requires an approximately spherical source."
+                )
+            if not torch.allclose(
+                source.neumann,
+                source.neumann[0].expand_as(source.neumann),
+            ):
+                raise ValueError(
+                    "analytic_sphere requires a constant Neumann source."
+                )
+
+            center = (
+                source.vertices.max(dim=0).values
+                + source.vertices.min(dim=0).values
+            ) / 2.0
+            radius = extents.mean() / 2.0
+            distances = torch.linalg.vector_norm(
+                self.trg_points - center, dim=-1
+            ).cpu()
+            if torch.any(distances <= radius.cpu()):
+                raise ValueError(
+                    "analytic_sphere target points must be outside the source."
+                )
+            neumann_magnitude = source.neumann[0].abs().cpu()
+            denominator = (
+                neumann_magnitude
+                * radius.cpu().square()
+                / (
+                    distances
+                    * torch.sqrt(
+                        1.0
+                        + torch.as_tensor(
+                            self.k * radius.item(), dtype=distances.dtype
+                        ).square()
+                    )
+                )
+            )
+        else:
+            raise ValueError(
+                "reference_mode must be 'numerical' or 'analytic_sphere', "
+                f"got {reference_mode!r}."
+            )
+
+        denominator = denominator.clamp_min(eps)
+        transfer = self.potential.abs() / denominator
+        if not torch.isfinite(transfer).all():
+            raise FloatingPointError("Relative transfer magnitude contains NaN or Inf.")
+        self.transfer_magnitude = transfer
+        return transfer
+
 
     def show(self, logged_values=False):
         # logged_values: bool, if True, the values will take a log transformation
@@ -803,7 +911,9 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
                                    show_scene:bool=False,
                                    split_mode:str = 'train',
                                    sound_src:str = 'ball.obj',
-                                   gpu_id=0
+                                   gpu_id=0,
+                                   target_mode: str = "magnitude",
+                                   reference_mode: str = "analytic_sphere",
                                    ):
     '''
     一个简化版的generate_sample_scene。
@@ -834,20 +944,49 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
          #   x[:, :3] = scene.trg_points#scene.trg_factor
          #   x[:, -1] = scene.freq_factor
          
-            y[:, freq_idx] = scene.potential.abs()#.unsqueeze(-1)
+            if target_mode == "magnitude":
+                y[:, freq_idx] = scene.potential.abs()
+            elif target_mode == "relative_transfer":
+                y[:, freq_idx] = scene.relative_transfer_magnitude(
+                    sound_src, reference_mode=reference_mode
+                )
+            else:
+                raise ValueError(f"Unsupported target_mode: {target_mode}")
 
          #   if src_idx != 0 and show_scene:
          #       scene.show()
                 
         # 存储x，y以及几何形状  trg_points
         if split_mode == 'train':
-            torch.save({"x": x, "y": y}, f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt")
+            torch.save(
+                {
+                    "x": x,
+                    "y": y,
+                    "solver": "bem",
+                    "target": target_mode,
+                    "reference": (
+                        reference_mode if target_mode == "relative_transfer" else ""
+                    ),
+                },
+                f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt",
+            )
             # 以obj格式存储几何形状
             mesh = scene.get_obstacle_mesh()
             # mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
             mesh.export(f"{data_dir}/data/train_mesh/{data_name}_{src_idx}.obj")
         else: # 测试集
-            torch.save({"x": x, "y": y}, f"{data_dir}/data/val_data/{data_name}_{src_idx}.pt")
+            torch.save(
+                {
+                    "x": x,
+                    "y": y,
+                    "solver": "bem",
+                    "target": target_mode,
+                    "reference": (
+                        reference_mode if target_mode == "relative_transfer" else ""
+                    ),
+                },
+                f"{data_dir}/data/val_data/{data_name}_{src_idx}.pt",
+            )
             # 以obj格式存储几何形状
             mesh = scene.get_obstacle_mesh()
             mesh.export(f"{data_dir}/data/val_mesh/{data_name}_{src_idx}.obj")
@@ -861,7 +1000,9 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
                              skip = False,
                             _transition = True,
                             _rotate = True,
-                            _resize = True
+                            _resize = True,
+                            target_mode: str = "magnitude",
+                            reference_mode: str = "analytic_sphere",
                              ):
     '''
     同`generate_sample_scene_simpler`, 但是生成的场景是声源被半包围障碍物包围的场景。
@@ -901,17 +1042,46 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
          #   x[:, :3] = scene.trg_points#scene.trg_factor
          #   x[:, -1] = scene.freq_factor
          
-            y[:, freq_idx] = scene.potential.abs()#.unsqueeze(-1)
+            if target_mode == "magnitude":
+                y[:, freq_idx] = scene.potential.abs()
+            elif target_mode == "relative_transfer":
+                y[:, freq_idx] = scene.relative_transfer_magnitude(
+                    sound_src, reference_mode=reference_mode
+                )
+            else:
+                raise ValueError(f"Unsupported target_mode: {target_mode}")
 
         
         if split_mode == 'train':
-            torch.save({"x": x, "y": y}, f"{data_dir}/e_data/train_data/{data_name}_{src_idx}.pt")
+            torch.save(
+                {
+                    "x": x,
+                    "y": y,
+                    "solver": "bem",
+                    "target": target_mode,
+                    "reference": (
+                        reference_mode if target_mode == "relative_transfer" else ""
+                    ),
+                },
+                f"{data_dir}/e_data/train_data/{data_name}_{src_idx}.pt",
+            )
             # 以obj格式存储几何形状
             mesh = scene.get_obstacle_mesh()
             # mesh = trimesh.Trimesh(scene.vertices.detach().cpu().numpy(), scene.triangles.detach().cpu().numpy())
             mesh.export(f"{data_dir}/e_data/train_mesh/{data_name}_{src_idx}.obj")
         else: # 测试集
-            torch.save({"x": x, "y": y}, f"{data_dir}/e_data/val_data/{data_name}_{src_idx}.pt")
+            torch.save(
+                {
+                    "x": x,
+                    "y": y,
+                    "solver": "bem",
+                    "target": target_mode,
+                    "reference": (
+                        reference_mode if target_mode == "relative_transfer" else ""
+                    ),
+                },
+                f"{data_dir}/e_data/val_data/{data_name}_{src_idx}.pt",
+            )
             # 以obj格式存储几何形状
             mesh = scene.get_obstacle_mesh()
             mesh.export(f"{data_dir}/e_data/val_mesh/{data_name}_{src_idx}.obj")
