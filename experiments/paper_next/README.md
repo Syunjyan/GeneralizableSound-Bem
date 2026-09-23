@@ -35,23 +35,29 @@ is provided by `libaec`; make sure `$CONDA_PREFIX/lib` is in
 
 ## Pro test protocol
 
-`pro_relative_v1.json` freezes object IDs and the random seed. Each invocation
+`pro_relative_v2.json` freezes unseen source meshes and the random seed. Each invocation
 generates one sample and refuses to overwrite an existing sample:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python experiments/paper_next/generate_pro_test.py \
   --category general \
-  --object-id 16 \
-  --template-mesh-dir ../GeneralizableSound/data_big/shapenet/train_mesh \
-  --output ../GeneralizableSound/data/pro_relative_v1
+  --object-id 100 \
+  --template-mesh dataset/fix/my_obstacles/1a153612bcdab3e23cc149415a408229.obj \
+  --output ../GeneralizableSound/data/pro_relative_v2
 ```
 
 Categories:
 
-- `general`: BEM general obstacles, held-out IDs 16–18;
-- `enclosed`: BEM half-surrounding obstacles, held-out IDs 16–18;
+- `general`: three source meshes whose vertex counts are absent from every
+  Pro_1 general-obstacle training mesh;
+- `enclosed`: three source meshes whose vertex counts are absent from every
+  Pro_1 half-surrounding training mesh;
 - `teapot`: FDTD Utah teapots, held-out IDs 7, 12, and 17.
 
 The future relative-transfer training set must exclude all frozen test object
 IDs. Old Pro checkpoints predict the old arbitrary-magnitude target and cannot
 be evaluated directly against this new test set.
+
+`pro_relative_v1.json` and `data/pro_relative_v1` are retained only as pipeline
+smoke assets: their BEM IDs occurred in legacy Pro_1 training and are not valid
+final geometry hold-outs.

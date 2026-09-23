@@ -1,5 +1,7 @@
 {
-  "name": "pro_relative_v1",
+  "name": "pro_relative_v1_smoke",
+  "status": "deprecated_for_final_evaluation",
+  "known_limitation": "BEM object IDs 16-18 occur in the legacy Pro_1 training products. Keep this dataset only for pipeline smoke tests.",
   "target": "relative_transfer",
   "query_count": 2000,
   "seed": 20260924,

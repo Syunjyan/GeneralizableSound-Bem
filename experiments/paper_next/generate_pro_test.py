@@ -217,7 +217,9 @@ def main() -> None:
     )
     parser.add_argument("--object-id", type=int, required=True)
     parser.add_argument("--sample-id", type=int, default=0)
-    parser.add_argument("--template-mesh-dir", type=Path, required=True)
+    template_group = parser.add_mutually_exclusive_group(required=True)
+    template_group.add_argument("--template-mesh-dir", type=Path)
+    template_group.add_argument("--template-mesh", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
         "--source-mesh",
@@ -235,7 +237,13 @@ def main() -> None:
     (args.output / "test_data").mkdir(exist_ok=True)
     (args.output / "generation_metadata").mkdir(exist_ok=True)
 
-    template = find_template(args.template_mesh_dir, args.object_id)
+    template = (
+        args.template_mesh.resolve()
+        if args.template_mesh is not None
+        else find_template(args.template_mesh_dir, args.object_id)
+    )
+    if not template.is_file():
+        raise FileNotFoundError(f"Template mesh not found: {template}")
     prefix = "fdtd_teapot" if args.category == "teapot" else f"bem_{args.category}"
     stem = f"{prefix}_obj{args.object_id:03d}_sample{args.sample_id:03d}"
     destinations = [

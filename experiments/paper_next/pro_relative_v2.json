@@ -1,0 +1,68 @@
+{
+  "name": "pro_relative_v2",
+  "status": "final_test_protocol",
+  "target": "relative_transfer",
+  "query_count": 2000,
+  "seed": 20260924,
+  "geometry_holdout_evidence": "Each BEM source mesh has a vertex count absent from every corresponding Pro_1 BEM training mesh. The generator preserves obstacle topology and vertex count.",
+  "splits": {
+    "bem_general": {
+      "test_objects": [
+        {
+          "id": 100,
+          "mesh": "dataset/fix/my_obstacles/1a153612bcdab3e23cc149415a408229.obj",
+          "vertices": 6358
+        },
+        {
+          "id": 101,
+          "mesh": "dataset/fix/my_obstacles/1a1fb603583ce36fc3bd24f986301745.obj",
+          "vertices": 8930
+        },
+        {
+          "id": 102,
+          "mesh": "dataset/fix/my_obstacles/94b497f0a8606eb96dc1f81f95db52d6.obj",
+          "vertices": 11505
+        }
+      ],
+      "reference": "analytic_sphere"
+    },
+    "bem_enclosed": {
+      "test_objects": [
+        {
+          "id": 200,
+          "mesh": "dataset/fix/enclosed_obstacles/11d2b7d8c377632bd4d8765e3910f617.obj.obj",
+          "vertices": 14942
+        },
+        {
+          "id": 201,
+          "mesh": "dataset/fix/enclosed_obstacles/12c4048e0d2f26a763b2acb037dfbcde.obj.obj",
+          "vertices": 12997
+        },
+        {
+          "id": 202,
+          "mesh": "dataset/fix/enclosed_obstacles/14a49c2b9f46faa04d6ef9ab90177563.obj.obj",
+          "vertices": 11406
+        }
+      ],
+      "reference": "analytic_sphere"
+    },
+    "fdtd_teapot": {
+      "template_dataset": "../GeneralizableSound/data_big/teapot_data/val_mesh",
+      "train_object_ids": [
+        2,
+        4,
+        5,
+        9,
+        10,
+        16,
+        18
+      ],
+      "test_object_ids": [
+        7,
+        12,
+        17
+      ],
+      "reference": "simulated_free_field"
+    }
+  }
+}
