@@ -30,6 +30,8 @@ To use the code, follow these steps:
     ```bash
     git clone https://github.com/syunjyan/GeneralizableSound-Bem.git
     cd GeneralizableSound-Bem
+
+This repository lives next to `GeneralizableSound` (network training) and `SIG25-Neural_Sound_Field` (paper) under `NeuralSoundField/`.
     ```
 
 2. Install the required dependencies as mentioned in the Dependencies section.

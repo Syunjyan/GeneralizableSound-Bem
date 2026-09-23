@@ -9,7 +9,7 @@ import numpy as np
 def load_cuda_imp(Debug=False, Verbose=False):
     src_dir = os.path.dirname(os.path.abspath(__file__)) + "/cuda"
     os.environ["TORCH_EXTENSIONS_DIR"] = os.path.join(src_dir, "build")
-    cflags = ["--extended-lambda", "--expt-relaxed-constexpr"]
+    cflags = ["--extended-lambda", "--expt-relaxed-constexpr", "-allow-unsupported-compiler"]
     if Debug:
         cflags += ["-G", "-g", "-O0"]
         cflags += ["-DDEBUG"]

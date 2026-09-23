@@ -48,7 +48,7 @@ def custom(data_dir, data_name, src_sample_num = None, trg_sample_num = None ,
                                  _resize=False, _rotate = False, _transition_vec = _transition_vec)
 
             scene.solve()
-            scene.show()
+            # scene.show()
 
             x[:, :3] = scene.trg_points
          
