@@ -935,8 +935,10 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
                 dtype=torch.float32,
             )
         y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
-        # for freq_idx in range(65):
-        for freq_idx in tqdm(range(65), position=gpu_id+1, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
+        frequency_indices = (
+            range(1, 64) if target_mode == "relative_transfer" else range(65)
+        )
+        for freq_idx in tqdm(frequency_indices, position=gpu_id+1, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
             scene.my_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src)
             scene.solve()
 
@@ -955,6 +957,9 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
 
          #   if src_idx != 0 and show_scene:
          #       scene.show()
+        if target_mode == "relative_transfer":
+            y[:, 0] = y[:, 1]
+            y[:, -1] = y[:, -2]
                 
         # 存储x，y以及几何形状  trg_points
         if split_mode == 'train':
@@ -966,6 +971,11 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
                     "target": target_mode,
                     "reference": (
                         reference_mode if target_mode == "relative_transfer" else ""
+                    ),
+                    "frequency_endpoints": (
+                        "nearest_resolved_bin"
+                        if target_mode == "relative_transfer"
+                        else ""
                     ),
                 },
                 f"{data_dir}/data/train_data/{data_name}_{src_idx}.pt",
@@ -983,6 +993,11 @@ def generate_sample_scene_simpler(data_dir, data_name, src_sample_num = None, tr
                     "target": target_mode,
                     "reference": (
                         reference_mode if target_mode == "relative_transfer" else ""
+                    ),
+                    "frequency_endpoints": (
+                        "nearest_resolved_bin"
+                        if target_mode == "relative_transfer"
+                        else ""
                     ),
                 },
                 f"{data_dir}/data/val_data/{data_name}_{src_idx}.pt",
@@ -1029,8 +1044,10 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
             )
         y = torch.zeros(trg_sample_num, 65, dtype=torch.float32)
 
-        # for freq_idx in range(65):
-        for freq_idx in tqdm(range(65), position=gpu_id+1, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
+        frequency_indices = (
+            range(1, 64) if target_mode == "relative_transfer" else range(65)
+        )
+        for freq_idx in tqdm(frequency_indices, position=gpu_id+1, desc=f"gpu_{gpu_id}, src {src_idx}/{src_sample_num}", leave=False):
             
             # 点声源
             scene.enclose_sample(seed=seed, freq_idx=freq_idx, max_freq_idx=65, sound_source=sound_src,
@@ -1051,7 +1068,10 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
             else:
                 raise ValueError(f"Unsupported target_mode: {target_mode}")
 
-        
+        if target_mode == "relative_transfer":
+            y[:, 0] = y[:, 1]
+            y[:, -1] = y[:, -2]
+
         if split_mode == 'train':
             torch.save(
                 {
@@ -1061,6 +1081,11 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
                     "target": target_mode,
                     "reference": (
                         reference_mode if target_mode == "relative_transfer" else ""
+                    ),
+                    "frequency_endpoints": (
+                        "nearest_resolved_bin"
+                        if target_mode == "relative_transfer"
+                        else ""
                     ),
                 },
                 f"{data_dir}/e_data/train_data/{data_name}_{src_idx}.pt",
@@ -1078,6 +1103,11 @@ def generate_sample_enclosed(data_dir, data_name, src_sample_num = None, trg_sam
                     "target": target_mode,
                     "reference": (
                         reference_mode if target_mode == "relative_transfer" else ""
+                    ),
+                    "frequency_endpoints": (
+                        "nearest_resolved_bin"
+                        if target_mode == "relative_transfer"
+                        else ""
                     ),
                 },
                 f"{data_dir}/e_data/val_data/{data_name}_{src_idx}.pt",

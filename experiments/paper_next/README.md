@@ -13,6 +13,9 @@ H(\mathbf{x}, f) =
   source-only BEM solve.
 - FDTD runs the same pressure source and receivers in a homogeneous scene.
 - The old global `FDTD2BEM_SCALE = 1/81.22` is not used.
+- FFT bin 0 and the exact Nyquist bin are replaced by their nearest resolved
+  neighbors (125 Hz and 7875 Hz). This avoids dividing by ill-conditioned
+  free-field endpoint spectra and gives BEM/FDTD the same channel semantics.
 - Existing magnitude datasets are not overwritten or silently converted.
 
 ## Validation

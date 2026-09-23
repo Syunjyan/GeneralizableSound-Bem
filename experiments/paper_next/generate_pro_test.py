@@ -98,7 +98,7 @@ def generate_bem(
     y = torch.zeros((query_count, 65), dtype=torch.float32)
     scene_seed = seed + object_id * 1009 + sample_id
 
-    for frequency_index in range(65):
+    for frequency_index in range(1, 64):
         if category == "general":
             scene.my_sample(
                 seed=scene_seed,
@@ -121,6 +121,8 @@ def generate_bem(
         y[:, frequency_index] = scene.relative_transfer_magnitude(
             "ball.obj", reference_mode="analytic_sphere"
         )
+    y[:, 0] = y[:, 1]
+    y[:, 64] = y[:, 63]
 
     torch.save(
         {
@@ -134,6 +136,7 @@ def generate_bem(
             "sample_id": sample_id,
             "seed": scene_seed,
             "source_template": str(template.resolve()),
+            "frequency_endpoints": "nearest_resolved_bin",
         },
         data_path,
     )
@@ -199,6 +202,7 @@ def generate_fdtd(
             "sample_id": sample_id,
             "seed": scene_seed,
             "source_template": str(template.resolve()),
+            "frequency_endpoints": "nearest_resolved_bin",
         },
         data_path,
     )
