@@ -1,0 +1,53 @@
+{
+  "dataset": "/data5/houxinyun/GeneralizableSound/data/pro_relative_full.staging",
+  "manifest_name": "pro_relative_full",
+  "expected_scenes": 2537,
+  "paired_scenes": 2537,
+  "unexpected_pairs": 0,
+  "counts": [
+    {
+      "split": "train",
+      "category": "enclosed",
+      "solver": "bem",
+      "count": 1198
+    },
+    {
+      "split": "train",
+      "category": "general",
+      "solver": "bem",
+      "count": 691
+    },
+    {
+      "split": "train",
+      "category": "teapot",
+      "solver": "fdtd",
+      "count": 391
+    },
+    {
+      "split": "val",
+      "category": "enclosed",
+      "solver": "bem",
+      "count": 136
+    },
+    {
+      "split": "val",
+      "category": "general",
+      "solver": "bem",
+      "count": 77
+    },
+    {
+      "split": "val",
+      "category": "teapot",
+      "solver": "fdtd",
+      "count": 44
+    }
+  ],
+  "source_meshes": {
+    "train": 132,
+    "val": 15
+  },
+  "cross_split_source_hashes": [],
+  "global_y_min": 1.6750431086620665e-07,
+  "global_y_max": 88864248.0,
+  "errors": []
+}
