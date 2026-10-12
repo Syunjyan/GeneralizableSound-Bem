@@ -1,0 +1,54 @@
+{
+  "status": "confirmed_solver_failure",
+  "dataset": "/data5/houxinyun/GeneralizableSound/data/pro_relative_full.staging",
+  "scope": {
+    "bem_scenes": 2102,
+    "scenes_with_transfer_above_1e3": 144,
+    "scene_fraction_percent": 6.850618458610846,
+    "general_scenes_with_transfer_above_1e3": 13,
+    "enclosed_scenes_with_transfer_above_1e3": 131,
+    "fdtd_scenes_with_transfer_above_1e3": 0,
+    "fdtd_transfer_max": 17.875886917114258,
+    "bem_transfer_max": 88864248.0
+  },
+  "findings": [
+    "The analytic free-field denominator is deterministic and was previously validated against a numerical source-only BEM solve.",
+    "Exact reproduction of the worst scene gives identical listener positions, face indices, and obstacle vertices within 5e-9, but repeated BEM solves range from normal transfer around 1.7 to hundreds, while the stored result reaches 8.89e7.",
+    "The production solver uses a Burton-Miller boundary equation, so the failure is not explained by using a plain non-unique exterior integral equation.",
+    "The complex BiCGSTAB implementation uses torch.dot instead of Hermitian torch.vdot for rho, alpha, and omega.",
+    "BiCGSTAB silently returns its last iterate after 500 steps even when the relative residual is far above tolerance; the non-convergence warning is commented out.",
+    "Observed relative residuals for spiking production-style solves range from 4.8e-3 to 1.96e2, despite an intended relative norm tolerance of 1e-5.",
+    "A diagnostic Hermitian-inner-product variant reduces residuals to approximately 4e-4 to 8e-4 and returns stable transfer maxima around 1.7 to 1.9 on three independently checked spike scenes."
+  ],
+  "checked_scenes": [
+    {
+      "stem": "bem_enclosed_obj028_sample008",
+      "frequency_hz": 4125,
+      "stored_transfer_max": 88864248.0,
+      "reproduced_transfer_max": 1.708945393562317,
+      "hermitian_bicgstab_transfer_max": 1.7158339023590088
+    },
+    {
+      "stem": "bem_general_obj028_sample000",
+      "frequency_hz": 7625,
+      "stored_transfer_max": 535277.625,
+      "reproduced_transfer_max": 1.8608413934707642,
+      "hermitian_bicgstab_transfer_max": 1.862804889678955
+    },
+    {
+      "stem": "bem_enclosed_obj008_sample008",
+      "frequency_hz": 7125,
+      "stored_transfer_max": 13292151.0,
+      "reproduced_transfer_max": 1.82905912399292,
+      "hermitian_bicgstab_transfer_max": 1.8311271667480469
+    }
+  ],
+  "conclusion": "The extreme BEM values are numerical artifacts from an unstable and unchecked iterative solve, not physical transfer resonances and not a free-field normalization failure.",
+  "required_before_regeneration": [
+    "Correct complex BiCGSTAB inner products.",
+    "Return iteration count and residual from every solve.",
+    "Reject or retry any frequency whose residual exceeds an agreed threshold.",
+    "Add a preconditioner or a robust fallback because the corrected unpreconditioned solver can stagnate around residual 1e-4.",
+    "Verify repeatability on spiking and ordinary general/enclosed scenes before regenerating any BEM labels."
+  ]
+}
