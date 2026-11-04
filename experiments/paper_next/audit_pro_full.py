@@ -7,6 +7,7 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
+import numpy as np
 import torch
 
 
@@ -20,6 +21,7 @@ def audit(dataset: Path, manifest: dict) -> dict:
     source_splits: dict[str, set[str]] = defaultdict(set)
     global_min = float("inf")
     global_max = float("-inf")
+    bem_residual_max = 0.0
 
     expected_pairs = {
         (
@@ -80,6 +82,41 @@ def audit(dataset: Path, manifest: dict) -> dict:
                     errors.append(
                         f"{split}/{stem}: {key}={sample.get(key)!r}, expected {expected!r}"
                     )
+            if scene["solver"] == "bem":
+                if sample.get("linear_solver") != "direct_lu_refined":
+                    errors.append(
+                        f"{split}/{stem}: missing checked direct BEM solve metadata"
+                    )
+                diagnostics = sample.get("linear_solve_diagnostics", [])
+                if len(diagnostics) != 63:
+                    errors.append(
+                        f"{split}/{stem}: expected 63 BEM solve diagnostics, "
+                        f"got {len(diagnostics)}"
+                    )
+                else:
+                    indices = [
+                        item.get("frequency_index") for item in diagnostics
+                    ]
+                    if indices != list(range(1, 64)):
+                        errors.append(
+                            f"{split}/{stem}: invalid diagnostic frequency indices"
+                        )
+                    residuals = [
+                        item.get("relative_residual") for item in diagnostics
+                    ]
+                    if any(
+                        value is None
+                        or not np.isfinite(value)
+                        or value > 1e-6
+                        for value in residuals
+                    ):
+                        errors.append(
+                            f"{split}/{stem}: BEM residual exceeds 1e-6"
+                        )
+                    else:
+                        bem_residual_max = max(
+                            bem_residual_max, max(residuals)
+                        )
             global_min = min(global_min, float(y.min()))
             global_max = max(global_max, float(y.max()))
         except Exception as error:
@@ -127,6 +164,7 @@ def audit(dataset: Path, manifest: dict) -> dict:
         "cross_split_source_hashes": cross_split_hashes,
         "global_y_min": None if global_min == float("inf") else global_min,
         "global_y_max": None if global_max == float("-inf") else global_max,
+        "bem_residual_max": bem_residual_max,
         "errors": errors,
     }
 

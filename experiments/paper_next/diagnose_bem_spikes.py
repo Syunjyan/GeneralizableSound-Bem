@@ -83,7 +83,7 @@ def main() -> None:
 
     from experiments.paper_next.generate_pro_full import prepare_bem_config
     from src.bem.BiCGSTAB import BiCGSTAB
-    from src.bem.solver import BEM_Solver
+    from src.bem.solver import BEM_Solver, solve_linear_equation_direct
     from src.scene import Scene
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
@@ -259,6 +259,44 @@ def main() -> None:
                         "all_finite": bool(torch.isfinite(transfer).all()),
                     }
                 )
+            dirichlet, solve_info = solve_linear_equation_direct(
+                lhs,
+                rhs,
+                residual_tolerance=1e-6,
+                refinement_steps=1,
+            )
+            potential = solver.boundary2potential(
+                k, scene.neumann, dirichlet, target_points
+            ).abs().cpu()
+            denominator = (
+                neumann_magnitude
+                * radius.cpu().square()
+                / (
+                    distances
+                    * torch.sqrt(
+                        1.0
+                        + torch.as_tensor(
+                            k * radius.item(), dtype=distances.dtype
+                        ).square()
+                    )
+                )
+            ).clamp_min(1e-12)
+            transfer = potential / denominator
+            results.append(
+                {
+                    "frequency_hz": frequency,
+                    "solver_variant": "direct_lu_refined",
+                    **solve_info,
+                    "dirichlet_l2": float(
+                        torch.linalg.vector_norm(dirichlet).cpu()
+                    ),
+                    "potential_max": float(potential.max()),
+                    "transfer_min": float(transfer.min()),
+                    "transfer_median": float(transfer.median()),
+                    "transfer_max": float(transfer.max()),
+                    "all_finite": bool(torch.isfinite(transfer).all()),
+                }
+            )
         del lhs, rhs, identity, solver
         torch.cuda.empty_cache()
 

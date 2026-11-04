@@ -6,6 +6,58 @@ from .BiCGSTAB import BiCGSTAB
 import numpy as np
 
 
+def solve_linear_equation_direct(
+    matrix,
+    b,
+    residual_tolerance=1e-6,
+    refinement_steps=1,
+):
+    """Solve a dense complex system and reject numerically invalid results.
+
+    LU factors are reused for iterative refinement.  The relative residual is
+    measured explicitly because a finite solution is not sufficient evidence
+    that a BEM system was solved accurately.
+    """
+    if callable(matrix):
+        raise TypeError("The direct solver requires an explicit matrix.")
+
+    lu, pivots, info = torch.linalg.lu_factor_ex(matrix, check_errors=False)
+    factor_info = int(info.item())
+    if factor_info != 0:
+        raise RuntimeError(f"LU factorization failed with info={factor_info}.")
+
+    solution = torch.linalg.lu_solve(lu, pivots, b.unsqueeze(-1)).squeeze(-1)
+    rhs_norm = torch.linalg.vector_norm(b).clamp_min(1e-30)
+    residual_history = []
+    for _ in range(refinement_steps + 1):
+        residual = b - matrix @ solution
+        relative_residual = float(
+            (torch.linalg.vector_norm(residual) / rhs_norm).detach().cpu()
+        )
+        residual_history.append(relative_residual)
+        if not torch.isfinite(solution).all() or not np.isfinite(relative_residual):
+            raise RuntimeError("Direct solve produced non-finite values.")
+        if relative_residual <= residual_tolerance:
+            break
+        correction = torch.linalg.lu_solve(
+            lu, pivots, residual.unsqueeze(-1)
+        ).squeeze(-1)
+        solution = solution + correction
+
+    if residual_history[-1] > residual_tolerance:
+        raise RuntimeError(
+            "Direct solve failed residual check: "
+            f"{residual_history[-1]:.3e} > {residual_tolerance:.3e}."
+        )
+    return solution, {
+        "method": "direct_lu_refined",
+        "relative_residual": residual_history[-1],
+        "residual_history": residual_history,
+        "refinement_steps": len(residual_history) - 1,
+        "factor_info": factor_info,
+    }
+
+
 def load_cuda_imp(Debug=False, Verbose=False):
     src_dir = os.path.dirname(os.path.abspath(__file__)) + "/cuda"
     os.environ["TORCH_EXTENSIONS_DIR"] = os.path.join(src_dir, "build")
@@ -67,7 +119,13 @@ def solve_linear_equation(A_func, b, x=None, nsteps=500, tol=1e-10, atol=1e-16):
 
 
 class BEM_Solver:
-    def __init__(self, vertices, triangles):
+    def __init__(
+        self,
+        vertices,
+        triangles,
+        linear_solver="bicgstab",
+        residual_tolerance=1e-6,
+    ):
         if isinstance(vertices, np.ndarray):
             vertices = torch.from_numpy(vertices).cuda().float()
         if isinstance(triangles, np.ndarray):
@@ -77,8 +135,26 @@ class BEM_Solver:
         check_tensor(triangles, torch.int32)
         self.vertices = vertices
         self.triangles = triangles
+        self.linear_solver = linear_solver
+        self.residual_tolerance = residual_tolerance
+        self.last_solve_info = None
         self.device = vertices.device
         self.normals, self.surface_curls_trans = preprocess(vertices, triangles)
+
+    def _solve(self, matrix, rhs):
+        if self.linear_solver == "bicgstab":
+            self.last_solve_info = {"method": "legacy_bicgstab_unchecked"}
+            return solve_linear_equation(matrix, rhs)
+        if self.linear_solver == "direct":
+            solution, info = solve_linear_equation_direct(
+                matrix,
+                rhs,
+                residual_tolerance=self.residual_tolerance,
+                refinement_steps=1,
+            )
+            self.last_solve_info = info
+            return solution
+        raise ValueError(f"Unsupported linear solver: {self.linear_solver!r}")
 
     def assemble_boundary_matrix(self, wavenumber, layer_type, approx=False):
         return getattr(
@@ -101,7 +177,7 @@ class BEM_Solver:
 
         LHS = 0.5 * identity - dlp
         RHS = -slp @ neumann
-        return solve_linear_equation(LHS, RHS)
+        return self._solve(LHS, RHS)
 
     def HBIE(self, k, neumann):
         identity = self.identity_matrix()
@@ -113,7 +189,7 @@ class BEM_Solver:
         beta = 1j / k
         LHS = 0.5 * identity - dlp + beta * hyp
         RHS = (-slp - beta * (adlp + 0.5 * identity)) @ neumann
-        return solve_linear_equation(LHS, RHS)
+        return self._solve(LHS, RHS)
 
     def neumann2dirichlet(self, k, neumann):
         identity = self.identity_matrix()
@@ -123,7 +199,7 @@ class BEM_Solver:
             self.assemble_boundary_matrix(k, "bm_rhs", approx=True)
             - beta * 0.5 * identity
         ) @ neumann
-        return solve_linear_equation(LHS, RHS)
+        return self._solve(LHS, RHS)
 
     def single_potential(self, k, neumann, points):
         return (

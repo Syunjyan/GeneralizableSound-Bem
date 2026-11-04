@@ -138,6 +138,7 @@ def generate_bem(output: Path, scene_spec: dict):
     scene = Scene(str(config_path))
     x = torch.zeros((scene_spec["query_count"], 3), dtype=torch.float32)
     y = torch.zeros((scene_spec["query_count"], 65), dtype=torch.float32)
+    linear_solve_diagnostics = []
 
     for frequency_index in range(1, 64):
         if scene_spec["category"] == "general":
@@ -154,7 +155,14 @@ def generate_bem(output: Path, scene_spec: dict):
                 max_freq_idx=65,
                 sound_source="ball.obj",
             )
-        scene.solve()
+        scene.solve(linear_solver="direct")
+        linear_solve_diagnostics.append(
+            {
+                "frequency_index": frequency_index,
+                "frequency_hz": frequency_index * 125,
+                **scene.solve_info,
+            }
+        )
         x.copy_(scene.trg_points.cpu())
         y[:, frequency_index] = scene.relative_transfer_magnitude(
             "ball.obj", reference_mode="analytic_sphere"
@@ -176,6 +184,8 @@ def generate_bem(output: Path, scene_spec: dict):
         "source_template": scene_spec["source"],
         "source_sha256": scene_spec["source_sha256"],
         "frequency_endpoints": "nearest_resolved_bin",
+        "linear_solver": "direct_lu_refined",
+        "linear_solve_diagnostics": linear_solve_diagnostics,
     }
     atomic_save(sample, obstacle, output, scene_spec)
     shutil.rmtree(work_dir, ignore_errors=True)

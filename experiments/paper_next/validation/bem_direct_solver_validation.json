@@ -1,0 +1,70 @@
+{
+  "status": "validated",
+  "production_change": "opt-in direct LU with one iterative-refinement step",
+  "legacy_bicgstab_modified": false,
+  "acceptance": {
+    "maximum_relative_residual": 1e-06,
+    "reject_non_finite": true,
+    "reject_lu_factorization_failure": true
+  },
+  "cases": [
+    {
+      "stem": "bem_enclosed_obj028_sample008",
+      "kind": "worst enclosed spike",
+      "frequency_hz": 4125,
+      "unknowns": 22129,
+      "stored_transfer_max": 88864248.0,
+      "direct_transfer_max": 1.715494155883789,
+      "relative_residual": 1.2443003072348802e-07,
+      "seconds": 2.303942395024933,
+      "peak_memory_gib": 10.960729122161865
+    },
+    {
+      "stem": "bem_general_obj028_sample000",
+      "kind": "general spike",
+      "frequency_hz": 7625,
+      "unknowns": 11190,
+      "stored_transfer_max": 535277.625,
+      "direct_transfer_max": 1.86269211769104,
+      "relative_residual": 1.0155675056466862e-07,
+      "seconds": 0.3977696589427069,
+      "peak_memory_gib": 2.811772346496582
+    },
+    {
+      "stem": "bem_general_obj000_sample000",
+      "kind": "ordinary scene",
+      "frequency_hz": 2000,
+      "unknowns": 6601,
+      "stored_transfer_max": 1.3400723934173584,
+      "direct_transfer_max": 1.3433977365493774,
+      "relative_residual": 3.1417249601872754e-07,
+      "seconds": 0.11845776601694524,
+      "peak_memory_gib": 0.9837017059326172
+    },
+    {
+      "stem": "bem_enclosed_obj026_sample000",
+      "kind": "largest generated BEM mesh",
+      "frequency_hz": 4000,
+      "unknowns": 28406,
+      "stored_transfer_max": 2.3175442218780518,
+      "direct_transfer_max": 2.4685304164886475,
+      "relative_residual": 1.3711949975458992e-07,
+      "seconds": 4.097333703073673,
+      "peak_memory_gib": 18.053003787994385
+    }
+  ],
+  "full_scene_validation": {
+    "stem": "bem_general_obj011_sample000",
+    "frequency_solves": 63,
+    "query_points": 1000,
+    "output_bins": 65,
+    "elapsed_seconds": 41.556,
+    "relative_residual_min": 1.026192251174507e-07,
+    "relative_residual_max": 7.629785159224411e-07,
+    "all_finite": true,
+    "endpoint_convention_valid": true,
+    "transfer_min": 0.008347706869244576,
+    "transfer_max": 2.641594648361206
+  },
+  "conclusion": "A checked direct solve is necessary for regenerated BEM labels. The original BiCGSTAB remains available unchanged for legacy workflows, while full-Pro relative-transfer generation explicitly opts into the validated direct solver."
+}

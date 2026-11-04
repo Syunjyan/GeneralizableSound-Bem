@@ -483,7 +483,7 @@ class Scene:
         self.k = (2 * np.pi * freq / 343.2).item()
 
 
-    def solve(self, man_trg_point=None):
+    def solve(self, man_trg_point=None, linear_solver="bicgstab"):
         '''
         Solve the scene: Calculate the potential of the current (sampled) scene at the target points.
         
@@ -493,10 +493,15 @@ class Scene:
         Returns:
         `self.potential`: a tensor of shape `(len(self.trg_points), 1)`, which is the potential of the scene at the target points.
         '''
-        solver = BEM_Solver(self.vertices, self.triangles)
+        solver = BEM_Solver(
+            self.vertices,
+            self.triangles,
+            linear_solver=linear_solver,
+        )
         # mcsolver = MCBEM_Solver(self.vertices, self.triangles)
         # mc_dirichlet = mcsolver.neumann2dirichlet(self.k, self.neumann)
         self.dirichlet = solver.neumann2dirichlet(self.k, self.neumann)
+        self.solve_info = solver.last_solve_info
 
         # self.rand_index = None
         if man_trg_point is None:
